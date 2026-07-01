@@ -48,6 +48,7 @@ import type { DomainGuide } from './data/domainGuides'
 import {
   type Domain,
   type DomainId,
+  type SkillAspectId,
   type SkillNode,
   type Stage,
   type StageId,
@@ -103,6 +104,17 @@ const defaultSkillId = 'social-infancy-belonging-attachment'
 
 const nodeWidth = 218
 const nodeHeight = 126
+const worldOverviewAspectIds = new Set<SkillAspectId>([
+  'body-control',
+  'sleep-recovery',
+  'listening-attention',
+  'number-sense',
+  'belonging-attachment',
+  'self-feeding-cooking',
+  'body-boundaries',
+  'sensory-play',
+  'patience-attention',
+])
 
 function App() {
   return (
@@ -190,8 +202,9 @@ function SkillTreeApp() {
   )
 
   const normalizedQuery = query.trim().toLocaleLowerCase(ui.locale)
+  const activeQuery = normalizedQuery.length >= 2 ? normalizedQuery : ''
   const matchedSkills = useMemo(() => {
-    if (!normalizedQuery) {
+    if (!activeQuery) {
       return skills
     }
 
@@ -209,9 +222,9 @@ function SkillTreeApp() {
         .join(' ')
         .toLocaleLowerCase(ui.locale)
 
-      return haystack.includes(normalizedQuery)
+      return haystack.includes(activeQuery)
     })
-  }, [domainById, normalizedQuery, skills, stageLabelById, ui.locale])
+  }, [activeQuery, domainById, skills, stageLabelById, ui.locale])
 
   const matchedIds = useMemo(() => new Set(matchedSkills.map((skill) => skill.id)), [matchedSkills])
   const ancestorIds = useMemo(() => collectAncestors(selectedSkill.id, skillById), [selectedSkill.id, skillById])
@@ -230,14 +243,41 @@ function SkillTreeApp() {
     (skill) => !completedIds.has(skill.id) && skill.prerequisites.every((id) => completedIds.has(id)),
   ).length
   const activeFocusCount =
-    Number(Boolean(normalizedQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
+    Number(Boolean(activeQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
+  const filteredSkills = useMemo(() => {
+    if (activeFocusCount === 0) {
+      return skills
+    }
+
+    return skills.filter((skill) =>
+      skillMatchesFocus(skill, {
+        focusedDomain,
+        focusedStage,
+        matchedIds,
+        normalizedQuery: activeQuery,
+      }),
+    )
+  }, [activeFocusCount, activeQuery, focusedDomain, focusedStage, matchedIds, skills])
+  const filteredSkillIds = useMemo(() => new Set(filteredSkills.map((skill) => skill.id)), [filteredSkills])
   const renderedSkillIds = useMemo(() => {
     const ids = new Set<string>()
 
-    if (viewMode === 'world') {
-      for (const skill of skills) {
+    if (activeFocusCount > 0) {
+      for (const skill of filteredSkills) {
         ids.add(skill.id)
       }
+
+      return ids
+    }
+
+    if (viewMode === 'world') {
+      for (const skill of skills) {
+        if (isWorldOverviewSkill(skill)) {
+          ids.add(skill.id)
+        }
+      }
+
+      ids.add(selectedSkill.id)
 
       return ids
     }
@@ -258,28 +298,13 @@ function SkillTreeApp() {
       }
     }
 
-    if (activeFocusCount > 0) {
-      for (const skill of skills) {
-        const missesSearch = Boolean(normalizedQuery) && !matchedIds.has(skill.id)
-        const outsideDomain = focusedDomain !== 'all' && skill.domain !== focusedDomain
-        const outsideStage = focusedStage !== 'all' && skill.stage !== focusedStage
-
-        if (!missesSearch && !outsideDomain && !outsideStage) {
-          ids.add(skill.id)
-        }
-      }
-    }
-
     return ids
   }, [
     activeFocusCount,
     directPrerequisiteIds,
     directUnlockIds,
-    focusedDomain,
-    focusedStage,
+    filteredSkills,
     lineageIds,
-    matchedIds,
-    normalizedQuery,
     selectedSkill.id,
     skills,
     viewMode,
@@ -310,10 +335,10 @@ function SkillTreeApp() {
   }, [activeProfileId, profiles])
 
   useEffect(() => {
-    if (normalizedQuery && matchedSkills.length > 0 && !matchedIds.has(selectedId)) {
-      setSelectedId(matchedSkills[0].id)
+    if (activeFocusCount > 0 && filteredSkills.length > 0 && !filteredSkillIds.has(selectedId)) {
+      setSelectedId(filteredSkills[0].id)
     }
-  }, [matchedIds, matchedSkills, normalizedQuery, selectedId])
+  }, [activeFocusCount, filteredSkillIds, filteredSkills, selectedId])
 
   useEffect(() => {
     let cancelled = false
@@ -346,7 +371,7 @@ function SkillTreeApp() {
           directPrerequisiteIds,
           directUnlockIds,
           matchedIds,
-          normalizedQuery,
+          normalizedQuery: activeQuery,
         })
         const dimmed = isSkillDimmed(skill, viewMode, {
           activeFocusCount,
@@ -354,7 +379,7 @@ function SkillTreeApp() {
           focusedStage,
           lineageIds,
           matchedIds,
-          normalizedQuery,
+          normalizedQuery: activeQuery,
         })
 
         return {
@@ -401,7 +426,7 @@ function SkillTreeApp() {
             focusedStage,
             lineageIds,
             matchedIds,
-            normalizedQuery,
+            normalizedQuery: activeQuery,
           }) ||
           isSkillDimmed(to, viewMode, {
             activeFocusCount,
@@ -409,7 +434,7 @@ function SkillTreeApp() {
             focusedStage,
             lineageIds,
             matchedIds,
-            normalizedQuery,
+            normalizedQuery: activeQuery,
           })
 
         return {
@@ -446,6 +471,7 @@ function SkillTreeApp() {
     }
   }, [
     activeFocusCount,
+    activeQuery,
     ancestorIds,
     completedIds,
     descendantIds,
@@ -459,7 +485,6 @@ function SkillTreeApp() {
     graphRoles,
     lineageIds,
     matchedIds,
-    normalizedQuery,
     renderedGraphEdges,
     renderedSkills,
     selectedSkill,
@@ -479,7 +504,7 @@ function SkillTreeApp() {
     if (nodes.length > 0) {
       window.requestAnimationFrame(() => {
         const focusNodes =
-          viewMode === 'world'
+          activeFocusCount > 0 || viewMode === 'world'
             ? undefined
             : viewMode === 'node'
               ? [{ id: selectedSkill.id }]
@@ -497,7 +522,7 @@ function SkillTreeApp() {
         })
       })
     }
-  }, [directPrerequisiteIds, directUnlockIds, fitView, nodes.length, selectedSkill.id, viewMode])
+  }, [activeFocusCount, directPrerequisiteIds, directUnlockIds, fitView, nodes.length, selectedSkill.id, viewMode])
 
   function clearFocus() {
     setQuery('')
@@ -687,7 +712,7 @@ function SkillTreeApp() {
             })}
           </div>
 
-          <p className="result-count">{ui.resultCount(matchedSkills.length, skills.length)}</p>
+          <p className="result-count">{ui.resultCount(filteredSkills.length, skills.length)}</p>
 
           <div className="profile-row" aria-label={ui.kidProfilesAria}>
             <div className="profile-summary">
@@ -1102,6 +1127,26 @@ function relationFor(
   return undefined
 }
 
+function skillMatchesFocus(
+  skill: SkillNode,
+  state: {
+    focusedDomain: DomainFocus
+    focusedStage: StageFocus
+    matchedIds: Set<string>
+    normalizedQuery: string
+  },
+) {
+  const missesSearch = Boolean(state.normalizedQuery) && !state.matchedIds.has(skill.id)
+  const outsideDomain = state.focusedDomain !== 'all' && skill.domain !== state.focusedDomain
+  const outsideStage = state.focusedStage !== 'all' && skill.stage !== state.focusedStage
+
+  return !missesSearch && !outsideDomain && !outsideStage
+}
+
+function isWorldOverviewSkill(skill: SkillNode) {
+  return !skill.generated || (skill.aspectId ? worldOverviewAspectIds.has(skill.aspectId) : false)
+}
+
 function isSkillDimmed(
   skill: SkillNode,
   viewMode: ViewMode,
@@ -1114,13 +1159,14 @@ function isSkillDimmed(
     normalizedQuery: string
   },
 ) {
-  const missesSearch = Boolean(state.normalizedQuery) && !state.matchedIds.has(skill.id)
-  const outsideDomain = state.focusedDomain !== 'all' && skill.domain !== state.focusedDomain
-  const outsideStage = state.focusedStage !== 'all' && skill.stage !== state.focusedStage
   const outsideLineage = !state.lineageIds.has(skill.id)
 
-  if (missesSearch || outsideDomain || outsideStage) {
+  if (!skillMatchesFocus(skill, state)) {
     return true
+  }
+
+  if (state.activeFocusCount > 0) {
+    return false
   }
 
   if (viewMode === 'world') {
@@ -1131,7 +1177,7 @@ function isSkillDimmed(
     return outsideLineage
   }
 
-  return state.activeFocusCount === 0 ? outsideLineage : false
+  return outsideLineage
 }
 
 function collectAncestors(id: string, skillById: Map<string, SkillNode>, visited = new Set<string>()) {
