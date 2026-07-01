@@ -68,6 +68,7 @@ type StageFocus = StageId | 'all'
 type ViewMode = 'world' | 'path' | 'node'
 type Relation = 'selected' | 'direct-before' | 'direct-next' | 'ancestor' | 'descendant' | 'matched'
 type GraphRole = 'root' | 'keystone' | 'bridge' | 'leaf' | 'ordinary'
+type ViewportTier = 'mobile' | 'tablet' | 'desktop'
 
 type SkillNodeData = {
   skill: SkillNode
@@ -102,8 +103,6 @@ const domainIcons: Record<DomainId, LucideIcon> = {
 
 const defaultSkillId = 'social-infancy-belonging-attachment'
 
-const nodeWidth = 218
-const nodeHeight = 126
 const worldOverviewAspectIds = new Set<SkillAspectId>([
   'body-control',
   'sleep-recovery',
@@ -129,8 +128,9 @@ function SkillTreeApp() {
   const [selectedId, setSelectedId] = useState(defaultSkillId)
   const [query, setQuery] = useState('')
   const [focusedDomain, setFocusedDomain] = useState<DomainFocus>('all')
-  const [focusedStage, setFocusedStage] = useState<StageFocus>('all')
+  const [focusedStage, setFocusedStage] = useState<StageFocus>('infancy')
   const [viewMode, setViewMode] = useState<ViewMode>('path')
+  const [viewportTier, setViewportTier] = useState<ViewportTier>(getViewportTier)
   const [profiles, setProfiles] = useState<KidProfile[]>(loadProfiles)
   const [activeProfileId, setActiveProfileId] = useState(() => loadProfiles()[0]?.id ?? 'default-child')
   const [newProfileName, setNewProfileName] = useState('')
@@ -244,6 +244,7 @@ function SkillTreeApp() {
   ).length
   const activeFocusCount =
     Number(Boolean(activeQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
+  const graphBudget = getGraphBudget(viewportTier, viewMode)
   const filteredSkills = useMemo(() => {
     if (activeFocusCount === 0) {
       return skills
@@ -259,11 +260,23 @@ function SkillTreeApp() {
     )
   }, [activeFocusCount, activeQuery, focusedDomain, focusedStage, matchedIds, skills])
   const filteredSkillIds = useMemo(() => new Set(filteredSkills.map((skill) => skill.id)), [filteredSkills])
+  const visibleFilteredSkills = useMemo(
+    () =>
+      limitSkillsForViewport(filteredSkills, graphBudget, {
+        completedIds,
+        directPrerequisiteIds,
+        directUnlockIds,
+        graphRoles,
+        lineageIds,
+        selectedSkill,
+      }),
+    [completedIds, directPrerequisiteIds, directUnlockIds, filteredSkills, graphBudget, graphRoles, lineageIds, selectedSkill],
+  )
   const renderedSkillIds = useMemo(() => {
     const ids = new Set<string>()
 
     if (activeFocusCount > 0) {
-      for (const skill of filteredSkills) {
+      for (const skill of visibleFilteredSkills) {
         ids.add(skill.id)
       }
 
@@ -303,10 +316,10 @@ function SkillTreeApp() {
     activeFocusCount,
     directPrerequisiteIds,
     directUnlockIds,
-    filteredSkills,
     lineageIds,
     selectedSkill.id,
     skills,
+    visibleFilteredSkills,
     viewMode,
   ])
   const renderedSkills = useMemo(
@@ -317,12 +330,27 @@ function SkillTreeApp() {
     () => graphEdges.filter(({ from, to }) => renderedSkillIds.has(from.id) && renderedSkillIds.has(to.id)),
     [graphEdges, renderedSkillIds],
   )
+  const graphNodeSize = getGraphNodeSize(viewportTier)
+  const useCompactNodes = viewportTier !== 'desktop' || viewMode === 'world' || renderedSkills.length > 90
+  const showMiniMap = viewportTier === 'desktop' && renderedSkills.length <= 180
 
   useEffect(() => {
     saveLanguage(language)
     document.documentElement.lang = language
     document.title = ui.documentTitle
   }, [language, ui.documentTitle])
+
+  useEffect(() => {
+    function syncViewportTier() {
+      setViewportTier(getViewportTier())
+    }
+
+    window.addEventListener('resize', syncViewportTier)
+
+    return () => {
+      window.removeEventListener('resize', syncViewportTier)
+    }
+  }, [])
 
   useEffect(() => {
     saveProfiles(profiles)
@@ -347,8 +375,8 @@ function SkillTreeApp() {
       const laidOut = await getLayoutedGraph(
         renderedSkills.map((skill) => ({
           id: skill.id,
-          width: nodeWidth,
-          height: nodeHeight,
+          width: graphNodeSize.width,
+          height: graphNodeSize.height,
         })),
         renderedGraphEdges.map(({ from, to }) => ({
           id: `${from.id}->${to.id}`,
@@ -398,7 +426,7 @@ function SkillTreeApp() {
             badgeLabel: relation ? relationLabels[relation] : roleLabels[graphRoles.get(skill.id) ?? 'ordinary'],
             readyLabel: ui.readyNode,
             dimmed,
-            compact: viewMode === 'world',
+            compact: useCompactNodes,
             completed: completedIds.has(skill.id),
             ready: skill.prerequisites.every((id) => completedIds.has(id)),
             unlockCount: unlockMap.get(skill.id)?.length ?? 0,
@@ -406,8 +434,8 @@ function SkillTreeApp() {
           selected: selectedSkill.id === skill.id,
           draggable: false,
           style: {
-            width: nodeWidth,
-            height: nodeHeight,
+            width: graphNodeSize.width,
+            height: graphNodeSize.height,
             '--domain-color': domain.color,
           } as CSSProperties,
         }
@@ -482,6 +510,8 @@ function SkillTreeApp() {
     fitView,
     focusedDomain,
     focusedStage,
+    graphNodeSize.height,
+    graphNodeSize.width,
     graphRoles,
     lineageIds,
     matchedIds,
@@ -497,6 +527,7 @@ function SkillTreeApp() {
     relationLabels,
     roleLabels,
     ui.readyNode,
+    useCompactNodes,
     viewMode,
   ])
 
@@ -515,20 +546,36 @@ function SkillTreeApp() {
                 ]
 
         void fitView({
-          duration: 650,
+          duration: viewportTier === 'desktop' ? 650 : 0,
           maxZoom: viewMode === 'node' ? 1.15 : viewMode === 'path' ? 0.98 : 0.78,
           nodes: focusNodes,
           padding: viewMode === 'node' ? 0.9 : viewMode === 'path' ? 0.52 : 0.16,
         })
       })
     }
-  }, [activeFocusCount, directPrerequisiteIds, directUnlockIds, fitView, nodes.length, selectedSkill.id, viewMode])
+  }, [activeFocusCount, directPrerequisiteIds, directUnlockIds, fitView, nodes.length, selectedSkill.id, viewportTier, viewMode])
 
   function clearFocus() {
     setQuery('')
     setFocusedDomain('all')
-    setFocusedStage('all')
+    setFocusedStage(activeProfile.ageBand)
     setViewMode('path')
+  }
+
+  function chooseStage(stage: StageFocus) {
+    if (stage === 'all' && focusedDomain === 'all') {
+      setFocusedDomain(selectedSkill.domain)
+    }
+
+    setFocusedStage(stage)
+  }
+
+  function chooseDomain(domain: DomainFocus) {
+    if (domain === 'all' && focusedStage === 'all') {
+      setFocusedStage(selectedSkill.stage)
+    }
+
+    setFocusedDomain(domain)
   }
 
   function updateActiveProfile(updater: (profile: KidProfile) => KidProfile) {
@@ -557,6 +604,7 @@ function SkillTreeApp() {
       ...profile,
       ageBand,
     }))
+    setFocusedStage(ageBand)
   }
 
   function addProfile(event: FormEvent<HTMLFormElement>) {
@@ -666,7 +714,7 @@ function SkillTreeApp() {
               className="stage-tab"
               type="button"
               aria-pressed={focusedStage === 'all'}
-              onClick={() => setFocusedStage('all')}
+              onClick={() => chooseStage('all')}
             >
               {ui.fullTimeline}
             </button>
@@ -676,7 +724,7 @@ function SkillTreeApp() {
                 type="button"
                 key={stage.id}
                 aria-pressed={focusedStage === stage.id}
-                onClick={() => setFocusedStage(stage.id)}
+                onClick={() => chooseStage(stage.id)}
               >
                 <span>{stage.age}</span>
                 {stage.title}
@@ -689,7 +737,7 @@ function SkillTreeApp() {
               className="domain-chip"
               type="button"
               aria-pressed={focusedDomain === 'all'}
-              onClick={() => setFocusedDomain('all')}
+              onClick={() => chooseDomain('all')}
             >
               <Filter aria-hidden="true" size={16} />
               {ui.allDomains}
@@ -702,7 +750,7 @@ function SkillTreeApp() {
                   type="button"
                   key={domain.id}
                   aria-pressed={focusedDomain === domain.id}
-                  onClick={() => setFocusedDomain(domain.id)}
+                  onClick={() => chooseDomain(domain.id)}
                   style={{ '--domain-color': domain.color } as CSSProperties}
                 >
                   <Icon aria-hidden="true" size={16} />
@@ -712,7 +760,7 @@ function SkillTreeApp() {
             })}
           </div>
 
-          <p className="result-count">{ui.resultCount(filteredSkills.length, skills.length)}</p>
+          <p className="result-count">{ui.resultCount(filteredSkills.length, renderedSkills.length, skills.length)}</p>
 
           <div className="profile-row" aria-label={ui.kidProfilesAria}>
             <div className="profile-summary">
@@ -799,20 +847,23 @@ function SkillTreeApp() {
               nodesDraggable={false}
               nodesConnectable={false}
               elementsSelectable
+              onlyRenderVisibleElements
               proOptions={{ hideAttribution: true }}
             >
               <Background color="#d8d0bf" gap={28} size={1} />
               <Controls position="bottom-left" />
-              <MiniMap
-                position="bottom-right"
-                pannable
-                zoomable
-                nodeStrokeWidth={4}
-                nodeColor={(node) => {
-                  const data = node.data as SkillNodeData
-                  return data.completed ? '#2f6b4f' : data.dimmed ? '#d7d0c3' : data.domain.color
-                }}
-              />
+              {showMiniMap && (
+                <MiniMap
+                  position="bottom-right"
+                  pannable
+                  zoomable
+                  nodeStrokeWidth={4}
+                  nodeColor={(node) => {
+                    const data = node.data as SkillNodeData
+                    return data.completed ? '#2f6b4f' : data.dimmed ? '#d7d0c3' : data.domain.color
+                  }}
+                />
+              )}
               <Panel position="top-left" className="map-panel">
                 <div className="map-panel__title">
                   <Compass aria-hidden="true" size={18} />
@@ -1145,6 +1196,195 @@ function skillMatchesFocus(
 
 function isWorldOverviewSkill(skill: SkillNode) {
   return !skill.generated || (skill.aspectId ? worldOverviewAspectIds.has(skill.aspectId) : false)
+}
+
+function getViewportTier(): ViewportTier {
+  if (typeof window === 'undefined') {
+    return 'desktop'
+  }
+
+  if (window.innerWidth < 760) {
+    return 'mobile'
+  }
+
+  if (window.innerWidth < 1180) {
+    return 'tablet'
+  }
+
+  return 'desktop'
+}
+
+function getGraphBudget(viewportTier: ViewportTier, viewMode: ViewMode) {
+  if (viewportTier === 'mobile') {
+    return viewMode === 'node' ? 32 : 48
+  }
+
+  if (viewportTier === 'tablet') {
+    return viewMode === 'node' ? 52 : 88
+  }
+
+  return viewMode === 'node' ? 90 : 156
+}
+
+function getGraphNodeSize(viewportTier: ViewportTier) {
+  if (viewportTier === 'mobile') {
+    return { width: 188, height: 92 }
+  }
+
+  if (viewportTier === 'tablet') {
+    return { width: 204, height: 108 }
+  }
+
+  return { width: 218, height: 126 }
+}
+
+function limitSkillsForViewport(
+  skills: SkillNode[],
+  budget: number,
+  state: {
+    completedIds: Set<string>
+    directPrerequisiteIds: Set<string>
+    directUnlockIds: Set<string>
+    graphRoles: Map<string, GraphRole>
+    lineageIds: Set<string>
+    selectedSkill: SkillNode
+  },
+) {
+  if (skills.length <= budget) {
+    return skills
+  }
+
+  const skillIds = new Set(skills.map((skill) => skill.id))
+  const protectedIds = new Set<string>()
+
+  if (skillIds.has(state.selectedSkill.id)) {
+    protectedIds.add(state.selectedSkill.id)
+  }
+
+  for (const skill of skills) {
+    if (!skill.generated) {
+      protectedIds.add(skill.id)
+    }
+  }
+
+  for (const id of state.directPrerequisiteIds) {
+    if (skillIds.has(id)) {
+      protectedIds.add(id)
+    }
+  }
+
+  for (const id of state.directUnlockIds) {
+    if (skillIds.has(id)) {
+      protectedIds.add(id)
+    }
+  }
+
+  const indexById = new Map(skills.map((skill, index) => [skill.id, index]))
+  const protectedSkills = skills
+    .filter((skill) => protectedIds.has(skill.id))
+    .sort((a, b) => skillRenderPriority(a, state) - skillRenderPriority(b, state) || (indexById.get(a.id) ?? 0) - (indexById.get(b.id) ?? 0))
+
+  if (protectedSkills.length >= budget) {
+    return protectedSkills.slice(0, budget)
+  }
+
+  const domains = new Set(skills.map((skill) => skill.domain))
+  const stages = new Set(skills.map((skill) => skill.stage))
+  const groups = new Map<string, SkillNode[]>()
+
+  for (const skill of skills) {
+    if (protectedIds.has(skill.id)) {
+      continue
+    }
+
+    const key =
+      domains.size > 1 && stages.size === 1
+        ? skill.domain
+        : stages.size > 1 && domains.size === 1
+          ? skill.stage
+          : `${skill.stage}:${skill.domain}`
+    const group = groups.get(key) ?? []
+    group.push(skill)
+    groups.set(key, group)
+  }
+
+  for (const group of groups.values()) {
+    group.sort(
+      (a, b) =>
+        skillRenderPriority(a, state) - skillRenderPriority(b, state) ||
+        (indexById.get(a.id) ?? 0) - (indexById.get(b.id) ?? 0),
+    )
+  }
+
+  const picked = [...protectedSkills]
+  const groupList = Array.from(groups.values())
+
+  while (picked.length < budget) {
+    let added = false
+
+    for (const group of groupList) {
+      const skill = group.shift()
+
+      if (!skill) {
+        continue
+      }
+
+      picked.push(skill)
+      added = true
+
+      if (picked.length >= budget) {
+        break
+      }
+    }
+
+    if (!added) {
+      break
+    }
+  }
+
+  return picked
+}
+
+function skillRenderPriority(
+  skill: SkillNode,
+  state: {
+    completedIds: Set<string>
+    directPrerequisiteIds: Set<string>
+    directUnlockIds: Set<string>
+    graphRoles: Map<string, GraphRole>
+    lineageIds: Set<string>
+    selectedSkill: SkillNode
+  },
+) {
+  if (skill.id === state.selectedSkill.id) {
+    return 0
+  }
+
+  if (state.directPrerequisiteIds.has(skill.id) || state.directUnlockIds.has(skill.id)) {
+    return 1
+  }
+
+  if (!skill.generated) {
+    return 2
+  }
+
+  if (state.completedIds.has(skill.id)) {
+    return 3
+  }
+
+  if (state.lineageIds.has(skill.id)) {
+    return 4
+  }
+
+  const rolePriority: Record<GraphRole, number> = {
+    root: 5,
+    keystone: 6,
+    bridge: 7,
+    ordinary: 8,
+    leaf: 9,
+  }
+
+  return rolePriority[state.graphRoles.get(skill.id) ?? 'ordinary']
 }
 
 function isSkillDimmed(

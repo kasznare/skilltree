@@ -60,7 +60,7 @@ export type UiCopy = {
   fullTimeline: string
   domainFocusAria: string
   allDomains: string
-  resultCount: (matches: number, total: number) => string
+  resultCount: (matches: number, shown: number, total: number) => string
   kidProfilesAria: string
   defaultProfileName: string
   progressSummary: (completed: number, ready: number) => string
@@ -204,7 +204,10 @@ const englishUi: UiCopy = {
   fullTimeline: 'Full timeline',
   domainFocusAria: 'Domain focus',
   allDomains: 'All domains',
-  resultCount: (matches, total) => `${matches} matching current filters from ${total} skills`,
+  resultCount: (matches, shown, total) =>
+    shown < matches
+      ? `${matches} match current filters · showing ${shown} for speed · ${total} total`
+      : `${matches} matching current filters from ${total} skills`,
   kidProfilesAria: 'Kid profiles',
   defaultProfileName: 'First child',
   progressSummary: (completed, ready) => `${completed} complete · ${ready} ready`,
@@ -274,7 +277,10 @@ const hungarianUi: UiCopy = {
   fullTimeline: 'Teljes idővonal',
   domainFocusAria: 'Területi fókusz',
   allDomains: 'Minden terület',
-  resultCount: (matches, total) => `${matches} illeszkedik a szűrőkre ${total} készségből`,
+  resultCount: (matches, shown, total) =>
+    shown < matches
+      ? `${matches} illeszkedik a szűrőkre · ${shown} megjelenítve a sebességért · ${total} összesen`
+      : `${matches} illeszkedik a szűrőkre ${total} készségből`,
   kidProfilesAria: 'Gyerekprofilok',
   defaultProfileName: 'Első gyerek',
   progressSummary: (completed, ready) => `${completed} kész · ${ready} készen áll`,
