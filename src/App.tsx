@@ -330,6 +330,15 @@ function SkillTreeApp() {
     () => graphEdges.filter(({ from, to }) => renderedSkillIds.has(from.id) && renderedSkillIds.has(to.id)),
     [graphEdges, renderedSkillIds],
   )
+  const cameraFitKey = [
+    viewportTier,
+    viewMode,
+    focusedDomain,
+    focusedStage,
+    activeQuery,
+    renderedSkills.length,
+    renderedGraphEdges.length,
+  ].join(':')
   const graphNodeSize = getGraphNodeSize(viewportTier)
   const useCompactNodes = viewportTier !== 'desktop' || viewMode === 'world' || renderedSkills.length > 90
   const showMiniMap = viewportTier === 'desktop' && renderedSkills.length <= 180
@@ -534,26 +543,14 @@ function SkillTreeApp() {
   useEffect(() => {
     if (nodes.length > 0) {
       window.requestAnimationFrame(() => {
-        const focusNodes =
-          activeFocusCount > 0 || viewMode === 'world'
-            ? undefined
-            : viewMode === 'node'
-              ? [{ id: selectedSkill.id }]
-              : [
-                  { id: selectedSkill.id },
-                  ...Array.from(directPrerequisiteIds).map((id) => ({ id })),
-                  ...Array.from(directUnlockIds).map((id) => ({ id })),
-                ]
-
         void fitView({
           duration: viewportTier === 'desktop' ? 650 : 0,
           maxZoom: viewMode === 'node' ? 1.15 : viewMode === 'path' ? 0.98 : 0.78,
-          nodes: focusNodes,
           padding: viewMode === 'node' ? 0.9 : viewMode === 'path' ? 0.52 : 0.16,
         })
       })
     }
-  }, [activeFocusCount, directPrerequisiteIds, directUnlockIds, fitView, nodes.length, selectedSkill.id, viewportTier, viewMode])
+  }, [cameraFitKey, fitView, nodes.length, viewportTier, viewMode])
 
   function clearFocus() {
     setQuery('')
