@@ -830,7 +830,8 @@
   color: var(--muted);
 }
 
-.intro-card {
+.intro-card,
+.topic-card {
   position: relative;
   margin-top: 18px;
   overflow: hidden;
@@ -839,18 +840,21 @@
   background: var(--surface);
 }
 
-.intro-art {
+.intro-art,
+.topic-art {
   width: 100%;
   height: auto;
 }
 
-.intro-caption {
+.intro-caption,
+.topic-caption {
   position: absolute;
   left: 12px;
   bottom: 12px;
 }
 
-.intro-caption span {
+.intro-caption span,
+.topic-caption span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -862,6 +866,14 @@
   font-size: 0.78rem;
   font-weight: 850;
   box-shadow: 0 8px 18px rgba(49, 43, 32, 0.11);
+}
+
+.topic-card {
+  box-shadow: 0 14px 30px rgba(49, 43, 32, 0.08);
+}
+
+.topic-art {
+  display: block;
 }
 
 .complete-button {

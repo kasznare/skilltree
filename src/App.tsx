@@ -1,4 +1,4 @@
-import type { CSSProperties, FormEvent } from 'react'
+import type { CSSProperties, FormEvent, ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import type { Edge, Node, NodeProps } from '@xyflow/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -99,6 +99,76 @@ const domainIcons: Record<DomainId, LucideIcon> = {
   safety: ShieldCheck,
   creativity: Paintbrush,
   character: BadgeCheck,
+}
+
+const topicMotifs: Record<DomainId, ReactNode> = {
+  movement: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="0" cy="-18" r="13" fill="#fffefa" opacity="0.74" strokeWidth="3" />
+      <path d="M-24 4 C-8 -8, 10 -8, 26 4" strokeWidth="7" opacity="0.36" />
+      <path d="M-18 25 L0 5 L22 27" strokeWidth="5" />
+      <path d="M-28 36 C-8 28, 11 28, 32 36" strokeWidth="4" opacity="0.5" />
+    </g>
+  ),
+  care: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M0 -32 C24 -8, 22 23, 0 35 C-22 23, -24 -8, 0 -32Z" fill="#fffefa" opacity="0.76" strokeWidth="3" />
+      <path d="M-22 7 H-8 L-2 -8 L8 22 L15 7 H26" strokeWidth="5" />
+      <circle cx="0" cy="4" r="31" strokeWidth="2" opacity="0.32" />
+    </g>
+  ),
+  language: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M-34 -20 H28 Q38 -20, 38 -8 V11 Q38 23, 26 23 H-4 L-24 38 V23 H-34 Q-44 23, -44 11 V-8 Q-44 -20, -34 -20Z" fill="#fffefa" opacity="0.78" strokeWidth="3" />
+      <path d="M-24 -4 H20 M-24 9 H8" strokeWidth="4" />
+      <circle cx="27" cy="9" r="4" fill="var(--domain-color)" strokeWidth="0" />
+    </g>
+  ),
+  reasoning: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="-34" y="-28" width="68" height="56" rx="10" fill="#fffefa" opacity="0.72" strokeWidth="3" />
+      <path d="M-18 -12 H-3 V3 H13 V18 M-18 18 H-4 M14 -12 H22" strokeWidth="4" />
+      <circle cx="-18" cy="-12" r="5" fill="var(--domain-color)" strokeWidth="0" />
+      <circle cx="13" cy="3" r="5" fill="var(--domain-color)" strokeWidth="0" />
+      <circle cx="22" cy="-12" r="5" fill="var(--domain-color)" strokeWidth="0" />
+    </g>
+  ),
+  social: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M-30 23 C-22 4, -8 -5, 0 -5 C8 -5, 22 4, 30 23" strokeWidth="6" opacity="0.42" />
+      <circle cx="-24" cy="-8" r="14" fill="#fffefa" opacity="0.78" strokeWidth="3" />
+      <circle cx="24" cy="-8" r="14" fill="#fffefa" opacity="0.78" strokeWidth="3" />
+      <path d="M-10 12 C-3 19, 3 19, 10 12" strokeWidth="4" />
+    </g>
+  ),
+  practical: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="-33" y="-19" width="48" height="43" rx="8" fill="#fffefa" opacity="0.76" strokeWidth="3" />
+      <path d="M-22 -19 V-29 H3 V-19 M23 -27 L38 -12 L6 20 L-9 5 Z" strokeWidth="4" />
+      <path d="M-20 -3 H-2 M-20 11 H5" strokeWidth="4" opacity="0.56" />
+    </g>
+  ),
+  safety: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M0 -35 L34 -21 V3 C34 24, 16 35, 0 42 C-16 35, -34 24, -34 3 V-21 Z" fill="#fffefa" opacity="0.78" strokeWidth="3" />
+      <path d="M-13 4 L-2 15 L18 -12" strokeWidth="6" />
+      <circle cx="0" cy="3" r="27" strokeWidth="2" opacity="0.28" />
+    </g>
+  ),
+  creativity: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M-34 24 C-23 -18, 8 -34, 33 -20 C19 -4, 7 13, -2 35" fill="#fffefa" opacity="0.72" strokeWidth="3" />
+      <path d="M-17 15 C-2 7, 7 -7, 18 -17 M-32 35 C-22 29, -13 29, -2 35" strokeWidth="5" />
+      <circle cx="28" cy="-25" r="5" fill="var(--domain-color)" strokeWidth="0" />
+    </g>
+  ),
+  character: (
+    <g fill="none" stroke="var(--domain-color)" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="0" cy="0" r="34" fill="#fffefa" opacity="0.74" strokeWidth="3" />
+      <path d="M0 -25 L9 -4 L30 0 L9 7 L0 29 L-9 7 L-30 0 L-9 -4 Z" strokeWidth="4" />
+      <circle cx="0" cy="0" r="7" fill="var(--domain-color)" strokeWidth="0" />
+    </g>
+  ),
 }
 
 const defaultSkillId = 'social-infancy-belonging-attachment'
@@ -896,10 +966,14 @@ function SkillTreeApp() {
             <h2>{selectedSkill.title}</h2>
             <p className="detail-summary">{selectedSkill.summary}</p>
 
-            <DomainIntroImage
+            <SkillTopicImage
+              skill={selectedSkill}
               domain={selectedDomain}
+              stage={stageLabelById.get(selectedSkill.stage) ?? stages[0]}
+              stageIndex={Math.max(0, stages.findIndex((stage) => stage.id === selectedSkill.stage))}
               guide={selectedGuide}
-              imageLabel={ui.introImageLabel(selectedDomain.label)}
+              roleLabel={roleLabels[selectedRole]}
+              imageLabel={ui.introImageLabel(selectedSkill.title)}
             />
 
             <button
@@ -1054,51 +1128,135 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
   )
 }
 
-function DomainIntroImage({ domain, guide, imageLabel }: { domain: Domain; guide: DomainGuide; imageLabel: string }) {
+function hashString(value: string) {
+  let hash = 0
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
+  }
+
+  return hash
+}
+
+function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180
+
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  }
+}
+
+function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(x, y, radius, endAngle)
+  const end = polarToCartesian(x, y, radius, startAngle)
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
+
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
+}
+
+function SkillTopicImage({
+  skill,
+  domain,
+  stage,
+  stageIndex,
+  guide,
+  roleLabel,
+  imageLabel,
+}: {
+  skill: SkillNode
+  domain: Domain
+  stage: Stage
+  stageIndex: number
+  guide: DomainGuide
+  roleLabel: string
+  imageLabel: string
+}) {
   const Icon = domainIcons[domain.id]
+  const seed = hashString(skill.id)
+  const motif = topicMotifs[domain.id]
+  const accentX = 58 + (seed % 52)
+  const accentY = 42 + ((seed >> 3) % 44)
+  const branchY = 116 + ((seed >> 5) % 20)
+  const stageProgress = Math.min(1, (stageIndex + 1) / 10)
+  const titleWords = skill.title
+    .replace(/^[^:]+:\s*/, '')
+    .split(/\s+/)
+    .slice(0, 3)
+    .join(' ')
 
   return (
-    <div className="intro-card" style={{ '--domain-color': domain.color } as CSSProperties}>
-      <svg className="intro-art" viewBox="0 0 360 180" role="img" aria-label={imageLabel}>
+    <div className="topic-card" style={{ '--domain-color': domain.color } as CSSProperties}>
+      <svg className="topic-art" viewBox="0 0 360 190" role="img" aria-label={imageLabel}>
         <defs>
-          <linearGradient id={`intro-${domain.id}`} x1="0" x2="1" y1="0" y2="1">
+          <linearGradient id={`topic-bg-${skill.id}`} x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stopColor={domain.color} stopOpacity="0.72" />
-            <stop offset="58%" stopColor={domain.color} stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#fffefa" stopOpacity="0.95" />
+            <stop offset="54%" stopColor={domain.color} stopOpacity="0.14" />
+            <stop offset="100%" stopColor="#fffefa" stopOpacity="0.96" />
           </linearGradient>
+          <pattern id={`topic-grid-${skill.id}`} width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M28 0H0V28" fill="none" stroke="#fffefa" strokeOpacity="0.22" strokeWidth="1" />
+          </pattern>
         </defs>
-        <rect width="360" height="180" rx="18" fill={`url(#intro-${domain.id})`} />
+        <rect width="360" height="190" rx="18" fill={`url(#topic-bg-${skill.id})`} />
+        <rect width="360" height="190" rx="18" fill={`url(#topic-grid-${skill.id})`} />
         <path
-          d="M36 130 C78 82, 106 112, 145 64 S228 78, 257 42 S316 40, 332 24"
+          d={`M30 ${branchY} C76 ${74 + (seed % 18)}, 113 ${139 - (seed % 22)}, 156 ${88 + (seed % 16)} S255 ${88 - (seed % 12)}, 326 ${44 + (seed % 28)}`}
           fill="none"
           stroke="#fffefa"
-          strokeOpacity="0.82"
-          strokeWidth="6"
+          strokeOpacity="0.84"
+          strokeWidth="7"
           strokeLinecap="round"
         />
         <path
-          d="M36 138 C88 116, 130 142, 178 104 S260 132, 326 82"
+          d={`M34 ${branchY + 12} C86 ${126 - (seed % 16)}, 128 ${152 - (seed % 20)}, 178 ${118 + (seed % 14)} S260 ${132 - (seed % 20)}, 326 ${94 + (seed % 12)}`}
           fill="none"
           stroke={domain.color}
-          strokeOpacity="0.42"
+          strokeOpacity="0.46"
           strokeWidth="3"
           strokeLinecap="round"
-          strokeDasharray="6 10"
+          strokeDasharray="7 10"
         />
-        {guide.imageMotifs.map((motif, index) => (
-          <g key={`${domain.id}-motif-${index}`} transform={`translate(${70 + index * 92} ${76 + (index % 2) * 28})`}>
-            <circle r="27" fill="#fffefa" opacity="0.78" />
-            <circle r="16" fill={domain.color} opacity="0.13" />
-            <text y="46" textAnchor="middle" fill="#202820" opacity="0.72" fontSize="10" fontWeight="700">
-              {motif}
+        <g transform={`translate(${accentX} ${accentY})`}>
+          {motif}
+        </g>
+        <g transform={`translate(${238 + (seed % 22)} ${54 + ((seed >> 4) % 22)}) rotate(${(seed % 5) * 6 - 12})`}>
+          {topicMotifs[skill.generated ? domain.id : 'character']}
+        </g>
+        <g className="topic-stage-orbit" transform="translate(284 132)">
+          <circle r="31" fill="#fffefa" opacity="0.72" />
+          <circle r="21" fill="none" stroke={domain.color} strokeOpacity="0.38" strokeWidth="5" />
+          <path
+            d={describeArc(0, 0, 21, -90, -90 + stageProgress * 330)}
+            fill="none"
+            stroke={domain.color}
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
+          <text y="4" textAnchor="middle" fill="#202820" fontSize="13" fontWeight="900">
+            {stageIndex + 1}
+          </text>
+        </g>
+        {guide.imageMotifs.slice(0, 2).map((guideMotif, index) => (
+          <g key={`${skill.id}-motif-${index}`} transform={`translate(${78 + index * 104} ${154 - index * 16})`}>
+            <circle r="18" fill="#fffefa" opacity="0.74" />
+            <circle r="8" fill={domain.color} opacity="0.18" />
+            <text y="33" textAnchor="middle" fill="#202820" opacity="0.72" fontSize="9" fontWeight="800">
+              {guideMotif}
             </text>
           </g>
         ))}
+        <text x="24" y="30" fill="#fffefa" opacity="0.92" fontSize="11" fontWeight="900">
+          {stage.age}
+        </text>
+        <text x="24" y="47" fill="#fffefa" opacity="0.82" fontSize="10" fontWeight="800">
+          {roleLabel.toLocaleUpperCase()}
+        </text>
       </svg>
-      <div className="intro-caption">
+      <div className="topic-caption">
         <span>
           <Icon aria-hidden="true" size={16} />
-          {guide.imageTone}
+          {titleWords}
         </span>
       </div>
     </div>
