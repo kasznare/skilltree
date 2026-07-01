@@ -30,6 +30,7 @@ import {
   GitBranch,
   Handshake,
   HeartPulse,
+  Languages,
   MessageCircle,
   Paintbrush,
   Plus,
@@ -43,16 +44,22 @@ import {
 } from 'lucide-react'
 import './App.css'
 import headerImage from './assets/skill-tree-header.png'
-import { domainGuides, stagePracticePrompts, type DomainGuide } from './data/domainGuides'
+import type { DomainGuide } from './data/domainGuides'
 import {
-  domains,
-  skills,
-  stages,
-  treeMeta,
+  type Domain,
   type DomainId,
   type SkillNode,
+  type Stage,
   type StageId,
 } from './data/skillTree'
+import {
+  getLocalizedContent,
+  languageOptions,
+  loadLanguage,
+  saveLanguage,
+  type Language,
+  type UiCopy,
+} from './i18n/localization'
 import { createProfile, loadProfiles, saveProfiles, type KidProfile } from './storage/profiles'
 
 type DomainFocus = DomainId | 'all'
@@ -63,10 +70,12 @@ type GraphRole = 'root' | 'keystone' | 'bridge' | 'leaf' | 'ordinary'
 
 type SkillNodeData = {
   skill: SkillNode
-  domain: (typeof domains)[number]
-  stage: (typeof stages)[number]
+  domain: Domain
+  stage: Stage
   relation?: Relation
   role: GraphRole
+  badgeLabel: string
+  readyLabel: string
   dimmed: boolean
   compact: boolean
   completed: boolean
@@ -90,8 +99,6 @@ const domainIcons: Record<DomainId, LucideIcon> = {
   character: BadgeCheck,
 }
 
-const stageLabelById = new Map(stages.map((stage) => [stage.id, stage]))
-const domainById = new Map(domains.map((domain) => [domain.id, domain]))
 const defaultSkillId = 'secure-attachment'
 
 const nodeWidth = 218
@@ -106,6 +113,7 @@ function App() {
 }
 
 function SkillTreeApp() {
+  const [language, setLanguage] = useState<Language>(loadLanguage)
   const [selectedId, setSelectedId] = useState(defaultSkillId)
   const [query, setQuery] = useState('')
   const [focusedDomain, setFocusedDomain] = useState<DomainFocus>('all')
@@ -119,13 +127,29 @@ function SkillTreeApp() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { fitView } = useReactFlow()
 
+  const localized = useMemo(() => getLocalizedContent(language), [language])
+  const {
+    ui,
+    treeMeta,
+    domains,
+    stages,
+    skills,
+    domainGuides,
+    stagePracticePrompts,
+    viewModes,
+    relationLabels,
+    roleLabels,
+  } = localized
+  const stageLabelById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages])
+  const domainById = useMemo(() => new Map(domains.map((domain) => [domain.id, domain])), [domains])
   const activeProfile = (profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0] ?? loadProfiles()[0])!
+  const activeProfileName = getProfileDisplayName(activeProfile, ui)
   const completedIds = useMemo(
     () => new Set(activeProfile?.completedSkillIds ?? []),
     [activeProfile?.completedSkillIds],
   )
 
-  const skillById = useMemo(() => new Map(skills.map((skill) => [skill.id, skill])), [])
+  const skillById = useMemo(() => new Map(skills.map((skill) => [skill.id, skill])), [skills])
 
   const unlockMap = useMemo(() => {
     const map = new Map<string, SkillNode[]>()
@@ -139,7 +163,7 @@ function SkillTreeApp() {
     }
 
     return map
-  }, [])
+  }, [skills])
 
   const graphEdges = useMemo(() => {
     return skills.flatMap((skill) =>
@@ -150,7 +174,7 @@ function SkillTreeApp() {
         })
         .filter((edge): edge is { from: SkillNode; to: SkillNode } => Boolean(edge)),
     )
-  }, [skillById])
+  }, [skillById, skills])
 
   const selectedSkill = skillById.get(selectedId) ?? skillById.get(defaultSkillId) ?? skills[0]
   const selectedDomain = domainById.get(selectedSkill.domain) ?? domains[0]
@@ -165,7 +189,7 @@ function SkillTreeApp() {
     [selectedSkill.prerequisites, skillById],
   )
 
-  const normalizedQuery = query.trim().toLowerCase()
+  const normalizedQuery = query.trim().toLocaleLowerCase(ui.locale)
   const matchedSkills = useMemo(() => {
     if (!normalizedQuery) {
       return skills
@@ -175,17 +199,19 @@ function SkillTreeApp() {
       const haystack = [
         skill.title,
         skill.summary,
-        skill.domain,
-        skill.stage,
+        domainById.get(skill.domain)?.label ?? skill.domain,
+        domainById.get(skill.domain)?.shortLabel ?? skill.domain,
+        stageLabelById.get(skill.stage)?.title ?? skill.stage,
+        stageLabelById.get(skill.stage)?.age ?? skill.stage,
         ...skill.outcomes,
         ...skill.tags,
       ]
         .join(' ')
-        .toLowerCase()
+        .toLocaleLowerCase(ui.locale)
 
       return haystack.includes(normalizedQuery)
     })
-  }, [normalizedQuery])
+  }, [domainById, normalizedQuery, skills, stageLabelById, ui.locale])
 
   const matchedIds = useMemo(() => new Set(matchedSkills.map((skill) => skill.id)), [matchedSkills])
   const ancestorIds = useMemo(() => collectAncestors(selectedSkill.id, skillById), [selectedSkill.id, skillById])
@@ -196,7 +222,7 @@ function SkillTreeApp() {
     () => new Set([selectedSkill.id, ...ancestorIds, ...descendantIds]),
     [ancestorIds, descendantIds, selectedSkill.id],
   )
-  const graphRoles = useMemo(() => buildGraphRoles(unlockMap), [unlockMap])
+  const graphRoles = useMemo(() => buildGraphRoles(unlockMap, skills), [skills, unlockMap])
   const selectedPrerequisiteCompleteCount = selectedSkill.prerequisites.filter((id) => completedIds.has(id)).length
   const selectedComplete = completedIds.has(selectedSkill.id)
   const completedCount = completedIds.size
@@ -205,6 +231,12 @@ function SkillTreeApp() {
   ).length
   const activeFocusCount =
     Number(Boolean(normalizedQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
+
+  useEffect(() => {
+    saveLanguage(language)
+    document.documentElement.lang = language
+    document.title = ui.documentTitle
+  }, [language, ui.documentTitle])
 
   useEffect(() => {
     saveProfiles(profiles)
@@ -277,6 +309,8 @@ function SkillTreeApp() {
             stage,
             relation,
             role: graphRoles.get(skill.id) ?? 'ordinary',
+            badgeLabel: relation ? relationLabels[relation] : roleLabels[graphRoles.get(skill.id) ?? 'ordinary'],
+            readyLabel: ui.readyNode,
             dimmed,
             compact: viewMode === 'world',
             completed: completedIds.has(skill.id),
@@ -356,6 +390,8 @@ function SkillTreeApp() {
     descendantIds,
     directPrerequisiteIds,
     directUnlockIds,
+    domainById,
+    domains,
     fitView,
     focusedDomain,
     focusedStage,
@@ -367,7 +403,13 @@ function SkillTreeApp() {
     selectedSkill,
     setEdges,
     setNodes,
+    skills,
+    stageLabelById,
+    stages,
     unlockMap,
+    relationLabels,
+    roleLabels,
+    ui.readyNode,
     viewMode,
   ])
 
@@ -445,7 +487,13 @@ function SkillTreeApp() {
   }
 
   const selectedRole = graphRoles.get(selectedSkill.id) ?? 'ordinary'
-  const selectedPracticePlan = buildPracticePlan(selectedSkill, selectedGuide, selectedPrerequisites)
+  const selectedPracticePlan = buildPracticePlan(
+    selectedSkill,
+    selectedGuide,
+    selectedPrerequisites,
+    stagePracticePrompts,
+    ui,
+  )
 
   return (
     <div className="app-shell">
@@ -453,44 +501,61 @@ function SkillTreeApp() {
         <img className="masthead__image" src={headerImage} alt="" />
         <div className="masthead__shade" />
         <div className="masthead__content">
-          <p className="eyebrow">{treeMeta.profile}</p>
-          <h1>Skill tree from baby to age 10</h1>
+          <div className="masthead__utility">
+            <p className="eyebrow">{treeMeta.profile}</p>
+            <label className="language-picker">
+              <Languages aria-hidden="true" size={16} />
+              <span>{ui.languageLabel}</span>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+                aria-label={ui.languageAria}
+              >
+                {languageOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <h1>{ui.heading}</h1>
           <p className="masthead__copy">{treeMeta.stance}</p>
-          <div className="metrics" aria-label="Tree summary">
+          <div className="metrics" aria-label={ui.treeSummaryAria}>
             <span>
               <strong>{skills.length}</strong>
-              skills
+              {ui.metrics.skills}
             </span>
             <span>
               <strong>{graphEdges.length}</strong>
-              links
+              {ui.metrics.links}
             </span>
             <span>
               <strong>{domains.length}</strong>
-              domains
+              {ui.metrics.domains}
             </span>
             <span>
               <strong>{stages.length}</strong>
-              age bands
+              {ui.metrics.ageBands}
             </span>
           </div>
         </div>
       </header>
 
       <main className="workspace">
-        <section className="focus-bar" aria-label="Tree focus controls">
+        <section className="focus-bar" aria-label={ui.treeAria}>
           <div className="focus-bar__topline">
             <label className="search-box">
               <Search aria-hidden="true" size={18} />
-              <span className="sr-only">Search skills</span>
+              <span className="sr-only">{ui.searchLabel}</span>
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Find skills, outcomes, tags"
+                placeholder={ui.searchPlaceholder}
               />
             </label>
 
-            <div className="view-switch" aria-label="Map view">
+            <div className="view-switch" aria-label={ui.mapViewAria}>
               {viewModes.map((mode) => (
                 <button
                   key={mode.id}
@@ -505,18 +570,18 @@ function SkillTreeApp() {
 
             <button className="clear-button" type="button" onClick={clearFocus} disabled={activeFocusCount === 0}>
               <X aria-hidden="true" size={17} />
-              Clear
+              {ui.clear}
             </button>
           </div>
 
-          <div className="focus-row" aria-label="Age focus">
+          <div className="focus-row" aria-label={ui.ageFocusAria}>
             <button
               className="stage-tab"
               type="button"
               aria-pressed={focusedStage === 'all'}
               onClick={() => setFocusedStage('all')}
             >
-              Full timeline
+              {ui.fullTimeline}
             </button>
             {stages.map((stage) => (
               <button
@@ -532,7 +597,7 @@ function SkillTreeApp() {
             ))}
           </div>
 
-          <div className="focus-row" aria-label="Domain focus">
+          <div className="focus-row" aria-label={ui.domainFocusAria}>
             <button
               className="domain-chip"
               type="button"
@@ -540,7 +605,7 @@ function SkillTreeApp() {
               onClick={() => setFocusedDomain('all')}
             >
               <Filter aria-hidden="true" size={16} />
-              All domains
+              {ui.allDomains}
             </button>
             {domains.map((domain) => {
               const Icon = domainIcons[domain.id]
@@ -560,27 +625,25 @@ function SkillTreeApp() {
             })}
           </div>
 
-          <p className="result-count">
-            {matchedSkills.length} search match{matchedSkills.length === 1 ? '' : 'es'} in {skills.length} skills
-          </p>
+          <p className="result-count">{ui.resultCount(matchedSkills.length, skills.length)}</p>
 
-          <div className="profile-row" aria-label="Kid profiles">
+          <div className="profile-row" aria-label={ui.kidProfilesAria}>
             <div className="profile-summary">
               <Users aria-hidden="true" size={18} />
               <span>
-                <strong>{activeProfile.name}</strong>
+                <strong>{activeProfileName}</strong>
                 <em>
                   {stageLabelById.get(activeProfile.ageBand)?.title} · {stageLabelById.get(activeProfile.ageBand)?.age}
                 </em>
-                {completedCount} complete · {readyCount} ready
+                {ui.progressSummary(completedCount, readyCount)}
               </span>
-              <progress value={completedCount} max={skills.length} aria-label={`${activeProfile.name} progress`} />
+              <progress value={completedCount} max={skills.length} aria-label={ui.progressLabel(activeProfileName)} />
               <label className="profile-age-select">
-                <span className="sr-only">Active child age band</span>
+                <span className="sr-only">{ui.activeChildAgeBand}</span>
                 <select
                   value={activeProfile.ageBand}
                   onChange={(event) => updateActiveProfileAge(event.target.value as StageId)}
-                  aria-label="Active child age band"
+                  aria-label={ui.activeChildAgeBand}
                 >
                   {stages.map((stage) => (
                     <option key={stage.id} value={stage.id}>
@@ -601,7 +664,7 @@ function SkillTreeApp() {
                 >
                   <UserRound aria-hidden="true" size={15} />
                   <span>
-                    {profile.name}
+                    {getProfileDisplayName(profile, ui)}
                     <small>{stageLabelById.get(profile.ageBand)?.age}</small>
                   </span>
                 </button>
@@ -612,13 +675,13 @@ function SkillTreeApp() {
               <input
                 value={newProfileName}
                 onChange={(event) => setNewProfileName(event.target.value)}
-                placeholder="Add child"
-                aria-label="New child name"
+                placeholder={ui.addChildPlaceholder}
+                aria-label={ui.newChildName}
               />
               <select
                 value={newProfileAge}
                 onChange={(event) => setNewProfileAge(event.target.value as StageId)}
-                aria-label="New child age band"
+                aria-label={ui.newChildAgeBand}
               >
                 {stages.map((stage) => (
                   <option key={stage.id} value={stage.id}>
@@ -628,13 +691,13 @@ function SkillTreeApp() {
               </select>
               <button type="submit">
                 <Plus aria-hidden="true" size={16} />
-                Add
+                {ui.add}
               </button>
             </form>
           </div>
         </section>
 
-        <section className="tree-layout" aria-label="Skill tree">
+        <section className="tree-layout" aria-label={ui.treeAria}>
           <div className="flow-shell">
             <ReactFlow
               nodes={nodes}
@@ -666,32 +729,28 @@ function SkillTreeApp() {
               <Panel position="top-left" className="map-panel">
                 <div className="map-panel__title">
                   <Compass aria-hidden="true" size={18} />
-                  Growth atlas
+                  {ui.growthAtlas}
                 </div>
-                <p>
-                  {viewMode === 'world' && 'World view shows the whole capability map with compact nodes.'}
-                  {viewMode === 'path' && 'Path view highlights the selected skill, its roots, and its future branches.'}
-                  {viewMode === 'node' && 'Node view moves close to one skill and keeps its direct links loud.'}
-                </p>
+                <p>{ui.mapPanel[viewMode]}</p>
               </Panel>
               <Panel position="top-right" className="legend-panel">
                 <span>
                   <i className="legend-dot legend-dot--root" />
-                  Root
+                  {roleLabels.root}
                 </span>
                 <span>
                   <i className="legend-dot legend-dot--keystone" />
-                  Keystone
+                  {roleLabels.keystone}
                 </span>
                 <span>
                   <i className="legend-dot legend-dot--bridge" />
-                  Bridge
+                  {roleLabels.bridge}
                 </span>
               </Panel>
             </ReactFlow>
           </div>
 
-          <aside className="detail-panel" aria-label="Selected skill">
+          <aside className="detail-panel" aria-label={ui.selectedSkillAria}>
             <div className="detail-kicker" style={{ '--domain-color': selectedDomain.color } as CSSProperties}>
               <span className="detail-icon">
                 <SelectedDomainIcon aria-hidden="true" size={18} />
@@ -702,7 +761,11 @@ function SkillTreeApp() {
             <h2>{selectedSkill.title}</h2>
             <p className="detail-summary">{selectedSkill.summary}</p>
 
-            <DomainIntroImage domain={selectedDomain} guide={selectedGuide} />
+            <DomainIntroImage
+              domain={selectedDomain}
+              guide={selectedGuide}
+              imageLabel={ui.introImageLabel(selectedDomain.label)}
+            />
 
             <button
               className={['complete-button', selectedComplete ? 'complete-button--done' : '']
@@ -712,31 +775,33 @@ function SkillTreeApp() {
               onClick={toggleSelectedComplete}
             >
               <CheckCircle2 aria-hidden="true" size={18} />
-              {selectedComplete ? `Completed for ${activeProfile.name}` : `Mark complete for ${activeProfile.name}`}
+              {selectedComplete ? ui.completedFor(activeProfileName) : ui.completeFor(activeProfileName)}
             </button>
 
             <dl className="detail-meta">
               <div>
-                <dt>Age</dt>
+                <dt>{ui.detail.age}</dt>
                 <dd>{stageLabelById.get(selectedSkill.stage)?.age}</dd>
               </div>
               <div>
-                <dt>Role</dt>
+                <dt>{ui.detail.role}</dt>
                 <dd>{roleLabels[selectedRole]}</dd>
               </div>
               <div>
-                <dt>Lineage</dt>
-                <dd>{ancestorIds.size + descendantIds.size + 1} nodes</dd>
+                <dt>{ui.detail.lineage}</dt>
+                <dd>
+                  {ancestorIds.size + descendantIds.size + 1} {ui.detail.nodes}
+                </dd>
               </div>
               <div>
-                <dt>Unlocks</dt>
+                <dt>{ui.detail.unlocks}</dt>
                 <dd>{selectedUnlocks.length}</dd>
               </div>
               <div>
-                <dt>Prereqs</dt>
+                <dt>{ui.detail.prereqs}</dt>
                 <dd>
                   {selectedSkill.prerequisites.length === 0
-                    ? 'Root'
+                    ? ui.detail.root
                     : `${selectedPrerequisiteCompleteCount}/${selectedSkill.prerequisites.length}`}
                 </dd>
               </div>
@@ -745,7 +810,7 @@ function SkillTreeApp() {
             <div className="detail-section domain-atlas">
               <h3>
                 <Compass aria-hidden="true" size={17} />
-                Domain map
+                {ui.detail.domainMap}
               </h3>
               <div className="subdomain-cloud">
                 {selectedGuide.subdomains.map((subdomain) => (
@@ -758,7 +823,7 @@ function SkillTreeApp() {
             <div className="detail-section">
               <h3>
                 <Sparkles aria-hidden="true" size={17} />
-                Outcomes
+                {ui.detail.outcomes}
               </h3>
               <ul className="outcome-list">
                 {selectedSkill.outcomes.map((outcome) => (
@@ -770,7 +835,7 @@ function SkillTreeApp() {
             <div className="detail-section practice-plan">
               <h3>
                 <ClipboardCheck aria-hidden="true" size={17} />
-                Ways to build this
+                {ui.detail.waysToBuild}
               </h3>
               <ol>
                 {selectedPracticePlan.map((step) => (
@@ -779,10 +844,22 @@ function SkillTreeApp() {
               </ol>
             </div>
 
-            <SkillLinks title="Before this" icon={GitBranch} skills={selectedPrerequisites} onSelect={setSelectedId} />
-            <SkillLinks title="Unlocks next" icon={ChevronRight} skills={selectedUnlocks} onSelect={setSelectedId} />
+            <SkillLinks
+              title={ui.detail.beforeThis}
+              icon={GitBranch}
+              skills={selectedPrerequisites}
+              emptyLabel={ui.detail.noLinkedSkills}
+              onSelect={setSelectedId}
+            />
+            <SkillLinks
+              title={ui.detail.unlocksNext}
+              icon={ChevronRight}
+              skills={selectedUnlocks}
+              emptyLabel={ui.detail.noLinkedSkills}
+              onSelect={setSelectedId}
+            />
 
-            <div className="tag-row" aria-label="Tags">
+            <div className="tag-row" aria-label={ui.detail.tags}>
               {selectedSkill.tags.map((tag) => (
                 <button key={tag} type="button" onClick={() => setQuery(tag)}>
                   #{tag}
@@ -796,9 +873,12 @@ function SkillTreeApp() {
   )
 }
 
+function getProfileDisplayName(profile: KidProfile, ui: UiCopy) {
+  return profile.id === 'default-child' && profile.name === 'First child' ? ui.defaultProfileName : profile.name
+}
+
 function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
   const Icon = domainIcons[data.domain.id]
-  const relationLabel = data.relation ? relationLabels[data.relation] : roleLabels[data.role]
 
   return (
     <div
@@ -820,6 +900,7 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
       <div className="node-orb" aria-hidden="true">
         {data.completed ? <CheckCircle2 size={18} /> : <Icon size={18} />}
       </div>
+      {data.ready && !data.completed && <span className="node-ready">{data.readyLabel}</span>}
       <div className="node-copy">
         <span className="node-kicker">
           {data.domain.shortLabel}
@@ -828,7 +909,7 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
         <strong>{data.skill.title}</strong>
         {!data.compact && <p>{data.skill.summary}</p>}
       </div>
-      <span className="node-badge">{relationLabel}</span>
+      <span className="node-badge">{data.badgeLabel}</span>
       <span className="node-count">
         <GitBranch aria-hidden="true" size={13} />
         {data.unlockCount}
@@ -838,12 +919,12 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
   )
 }
 
-function DomainIntroImage({ domain, guide }: { domain: (typeof domains)[number]; guide: DomainGuide }) {
+function DomainIntroImage({ domain, guide, imageLabel }: { domain: Domain; guide: DomainGuide; imageLabel: string }) {
   const Icon = domainIcons[domain.id]
 
   return (
     <div className="intro-card" style={{ '--domain-color': domain.color } as CSSProperties}>
-      <svg className="intro-art" viewBox="0 0 360 180" role="img" aria-label={`${domain.label} intro image`}>
+      <svg className="intro-art" viewBox="0 0 360 180" role="img" aria-label={imageLabel}>
         <defs>
           <linearGradient id={`intro-${domain.id}`} x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stopColor={domain.color} stopOpacity="0.72" />
@@ -893,10 +974,11 @@ type SkillLinksProps = {
   title: string
   icon: LucideIcon
   skills: SkillNode[]
+  emptyLabel: string
   onSelect: (id: string) => void
 }
 
-function SkillLinks({ title, icon: Icon, skills: linkedSkills, onSelect }: SkillLinksProps) {
+function SkillLinks({ title, icon: Icon, skills: linkedSkills, emptyLabel, onSelect }: SkillLinksProps) {
   return (
     <div className="detail-section">
       <h3>
@@ -913,33 +995,10 @@ function SkillLinks({ title, icon: Icon, skills: linkedSkills, onSelect }: Skill
           ))}
         </div>
       ) : (
-        <p className="none-copy">No linked skills yet.</p>
+        <p className="none-copy">{emptyLabel}</p>
       )}
     </div>
   )
-}
-
-const viewModes: { id: ViewMode; label: string }[] = [
-  { id: 'world', label: 'World' },
-  { id: 'path', label: 'Path' },
-  { id: 'node', label: 'Node' },
-]
-
-const relationLabels: Record<Relation, string> = {
-  selected: 'Selected',
-  'direct-before': 'Before',
-  'direct-next': 'Next',
-  ancestor: 'Root path',
-  descendant: 'Branch',
-  matched: 'Match',
-}
-
-const roleLabels: Record<GraphRole, string> = {
-  root: 'Root',
-  keystone: 'Keystone',
-  bridge: 'Bridge',
-  leaf: 'Leaf',
-  ordinary: 'Skill',
 }
 
 function relationFor(
@@ -1043,7 +1102,7 @@ function collectDescendants(id: string, unlockMap: Map<string, SkillNode[]>, vis
   return visited
 }
 
-function buildGraphRoles(unlockMap: Map<string, SkillNode[]>) {
+function buildGraphRoles(unlockMap: Map<string, SkillNode[]>, skills: SkillNode[]) {
   const roleMap = new Map<string, GraphRole>()
 
   for (const skill of skills) {
@@ -1070,36 +1129,43 @@ function buildGraphRoles(unlockMap: Map<string, SkillNode[]>) {
   return roleMap
 }
 
-function buildPracticePlan(skill: SkillNode, guide: DomainGuide, prerequisites: SkillNode[]) {
+function buildPracticePlan(
+  skill: SkillNode,
+  guide: DomainGuide,
+  prerequisites: SkillNode[],
+  stagePracticePrompts: Record<StageId, string[]>,
+  ui: UiCopy,
+) {
   const stagePrompts = stagePracticePrompts[skill.stage]
   const materials = guide.materials.slice(0, 3).join(', ')
   const observation = guide.observe.slice(0, 3).join(', ')
-  const firstOutcome = skill.outcomes[0]?.toLowerCase() ?? 'the target behavior'
+  const firstOutcome = skill.outcomes[0]?.toLocaleLowerCase(ui.locale) ?? ui.detail.outcomes.toLocaleLowerCase(ui.locale)
+  const skillTitle = skill.title.toLocaleLowerCase(ui.locale)
   const prerequisiteText =
     prerequisites.length > 0
-      ? `Start from ${formatSkillList(prerequisites)}; those are the roots this skill expects.`
-      : `${stagePrompts[0]}.`
+      ? ui.practicePlan.startFrom(formatSkillList(prerequisites, ui))
+      : ui.practicePlan.rootPrompt(stagePrompts[0])
 
   return [
     prerequisiteText,
-    `${guide.practiceLoop[0]} around "${skill.title.toLowerCase()}" using ${materials}.`,
-    `${guide.practiceLoop[1]} so he can practice ${firstOutcome}.`,
-    `Watch for ${observation}; mark complete when the outcomes are showing up in ordinary life.`,
+    ui.practicePlan.practiceAround(guide.practiceLoop[0], skillTitle, materials),
+    ui.practicePlan.repeatFor(guide.practiceLoop[1], firstOutcome),
+    ui.practicePlan.watchFor(observation),
   ]
 }
 
-function formatSkillList(list: SkillNode[]) {
-  const titles = list.slice(0, 3).map((skill) => skill.title.toLowerCase())
+function formatSkillList(list: SkillNode[], ui: UiCopy) {
+  const titles = list.slice(0, 3).map((skill) => skill.title.toLocaleLowerCase(ui.locale))
 
   if (titles.length <= 1) {
     return titles[0] ?? 'the previous skill'
   }
 
   if (titles.length === 2) {
-    return `${titles[0]} and ${titles[1]}`
+    return `${titles[0]} ${ui.listAnd} ${titles[1]}`
   }
 
-  return `${titles.slice(0, -1).join(', ')}, and ${titles[titles.length - 1]}`
+  return `${titles.slice(0, -1).join(', ')} ${ui.listAnd} ${titles[titles.length - 1]}`
 }
 
 async function getLayoutedGraph(
