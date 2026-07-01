@@ -10,6 +10,7 @@ import {
   treeMeta as baseTreeMeta,
   type Domain,
   type DomainId,
+  type SkillAspectId,
   type SkillNode,
   type Stage,
   type StageId,
@@ -185,7 +186,7 @@ function mapDomainGuides(copy: Record<DomainId, DomainGuideCopy>) {
 const englishUi: UiCopy = {
   locale: 'en-US',
   documentTitle: 'Skill Tree | Male Foundation Track',
-  heading: 'Skill tree from baby to age 10',
+  heading: 'Skill tree from baby to age 18',
   languageLabel: 'Language',
   languageAria: 'Choose language',
   treeSummaryAria: 'Tree summary',
@@ -255,7 +256,7 @@ const englishUi: UiCopy = {
 const hungarianUi: UiCopy = {
   locale: 'hu-HU',
   documentTitle: 'Készségfa | Fiú alapozó pálya',
-  heading: 'Készségfa babakortól 10 éves korig',
+  heading: 'Készségfa babakortól 18 éves korig',
   languageLabel: 'Nyelv',
   languageAria: 'Nyelv kiválasztása',
   treeSummaryAria: 'Fa összefoglaló',
@@ -352,14 +353,200 @@ const englishCopy: LocalizationCopy = {
   } as Record<GraphRoleId, string>,
 }
 
+const hungarianGeneratedDomainShort: Record<DomainId, string> = {
+  movement: 'test',
+  care: 'gondoskodás',
+  language: 'szavak',
+  reasoning: 'ész',
+  social: 'társas',
+  practical: 'élet',
+  safety: 'biztonság',
+  creativity: 'alkotás',
+  character: 'értékek',
+}
+
+const hungarianGeneratedStageTitle: Record<StageId, string> = {
+  infancy: 'Baba',
+  toddler: 'Totyogó',
+  preschool: 'Óvodás',
+  'early-school': 'Iskolakezdő',
+  'middle-childhood': 'Kisiskolás',
+  'later-childhood': 'Nagyobb gyerek',
+  preteen: 'Kiskamasz',
+  'early-adolescence': 'Korai kamaszkor',
+  'middle-adolescence': 'Középső kamaszkor',
+  'late-adolescence': 'Késő kamaszkor',
+}
+
+const hungarianGeneratedStageContext: Record<StageId, { setting: string; autonomy: string; evidence: string; tags: string[] }> = {
+  infancy: {
+    setting: 'meleg, gondozó által vezetett rutinokban',
+    autonomy: 'jelzésekkel, rövid részvétellel és ismételt találkozással',
+    evidence: 'apró, ismétlődő készenléti jelekben',
+    tags: ['baba', 'alapozás'],
+  },
+  toddler: {
+    setting: 'egyszerű rutinokban, utánzásban és egylépéses választásokban',
+    autonomy: 'felnőtt által vezetett próbákkal és rövid ismétlésekkel',
+    evidence: 'több próbálkozásban és kevesebb feszültségben',
+    tags: ['totyogó', 'gyakorlás'],
+  },
+  preschool: {
+    setting: 'játékban, történetekben, látható rutinokban és kis munkákban',
+    autonomy: 'irányított választásokkal és hibák utáni javítással',
+    evidence: 'játékban és napi rutinokban megjelenő készségben',
+    tags: ['óvodás', 'játék'],
+  },
+  'early-school': {
+    setting: 'otthonban, osztályban, játékokban és hasznos segítésben',
+    autonomy: 'lépések magyarázatával és rövid sorrendek követésével',
+    evidence: 'megbízhatóbb végigvitelben',
+    tags: ['iskola', 'sorrend'],
+  },
+  'middle-childhood': {
+    setting: 'csapatokban, tanulásban, házimunkában, hobbikban és kortárséletben',
+    autonomy: 'mérhető javulással és visszajelzés használatával',
+    evidence: 'mások számára is látható kompetenciában',
+    tags: ['kompetencia', 'visszajelzés'],
+  },
+  'later-childhood': {
+    setting: 'nagyobb felelősségekben, önálló gyakorlásban és pubertásra készülésben',
+    autonomy: 'ítélőképességgel, reflexióval és felügyelt tervezéssel',
+    evidence: 'jobb döntésekben, mielőtt felnőtt lépne közbe',
+    tags: ['ítélőképesség', 'kiskamasz'],
+  },
+  preteen: {
+    setting: 'kortárscsoportokban, pubertásváltozásokban, online terekben és hosszabb feladatokban',
+    autonomy: 'önfigyeléssel, segítségkéréssel és rutinok vállalásával',
+    evidence: 'biztonságosabb önállóságban ismerős helyzetekben',
+    tags: ['kiskamasz', 'pubertás'],
+  },
+  'early-adolescence': {
+    setting: 'identitásmunkában, erősebb érzelmekben, csapatokban, telefonhasználatban és közösségi terekben',
+    autonomy: 'egyeztetett önállósággal és őszinte reflexióval',
+    evidence: 'kortárs nyomás alatt is megtartott döntésekben',
+    tags: ['kamaszkor', 'identitás'],
+  },
+  'middle-adolescence': {
+    setting: 'mélyebb tanulásban, munkagyakorlatban, közlekedésben, kapcsolatokban és kockázati döntésekben',
+    autonomy: 'előretervezéssel és felügyelt felelősségvállalással',
+    evidence: 'megbízható viselkedésben nagyobb téteknél',
+    tags: ['kamasz', 'autonómia'],
+  },
+  'late-adolescence': {
+    setting: 'felnőtt átmenetekben, munkában, állampolgári életben, egészségügyi rendszerekben és hosszú távú tervekben',
+    autonomy: 'felnőtt szintű felelősséggel, szükség esetén tanácskéréssel',
+    evidence: 'háztartáson túli életre való készenlétben',
+    tags: ['felnőttkészülés', 'átmenet'],
+  },
+}
+
+const hungarianGeneratedAspectTitle: Record<SkillAspectId, { title: string; tags: string[] }> = {
+  'body-control': { title: 'Testkontroll', tags: ['test', 'koordináció'] },
+  'fine-control': { title: 'Finom kontroll', tags: ['kezek', 'finommotorika'] },
+  stamina: { title: 'Állóképesség', tags: ['állóképesség', 'fitness'] },
+  'athletic-practice': { title: 'Atlétikai gyakorlás', tags: ['sport', 'gyakorlás'] },
+  'recovery-posture': { title: 'Regeneráció és testtartás', tags: ['testtartás', 'regeneráció'] },
+  'physical-confidence': { title: 'Fizikai önbizalom', tags: ['önbizalom', 'kockázat'] },
+  'sleep-recovery': { title: 'Alvás és regeneráció', tags: ['alvás', 'regeneráció'] },
+  'food-nutrition': { title: 'Étel és táplálkozás', tags: ['étel', 'táplálkozás'] },
+  'hygiene-grooming': { title: 'Higiénia és ápoltság', tags: ['higiénia', 'ápoltság'] },
+  'body-literacy': { title: 'Testismeret', tags: ['test', 'pubertás'] },
+  'emotional-regulation': { title: 'Érzelmi szabályozás', tags: ['érzelem', 'szabályozás'] },
+  'health-advocacy': { title: 'Egészségképviselet', tags: ['egészség', 'képviselet'] },
+  'listening-attention': { title: 'Figyelés és figyelem', tags: ['figyelés', 'figyelem'] },
+  'spoken-expression': { title: 'Szóbeli kifejezés', tags: ['beszéd', 'kérdések'] },
+  'reading-comprehension': { title: 'Olvasásértés', tags: ['olvasás', 'szövegértés'] },
+  'writing-composition': { title: 'Írásbeli fogalmazás', tags: ['írás', 'fogalmazás'] },
+  'research-media': { title: 'Kutatás és médiamérlegelés', tags: ['kutatás', 'média'] },
+  'discussion-rhetoric': { title: 'Beszélgetés és érvelés', tags: ['beszélgetés', 'vita'] },
+  'number-sense': { title: 'Számérzék', tags: ['matek', 'szám'] },
+  'spatial-systems': { title: 'Téri és rendszergondolkodás', tags: ['tér', 'rendszerek'] },
+  'scientific-inquiry': { title: 'Tudományos vizsgálódás', tags: ['tudomány', 'vizsgálódás'] },
+  'planning-executive': { title: 'Tervezés és végrehajtó működés', tags: ['tervezés', 'végrehajtás'] },
+  'money-data': { title: 'Pénz és adatok', tags: ['pénz', 'adatok'] },
+  'logic-tradeoffs': { title: 'Logika és átváltások', tags: ['logika', 'ítélőképesség'] },
+  'belonging-attachment': { title: 'Odatartozás és kötődés', tags: ['odatartozás', 'kötődés'] },
+  'empathy-perspective': { title: 'Empátia és nézőpont', tags: ['empátia', 'nézőpont'] },
+  'friendship-belonging': { title: 'Barátság és odatartozás', tags: ['barátság', 'kortársak'] },
+  'conflict-repair': { title: 'Konfliktus és jóvátétel', tags: ['konfliktus', 'jóvátétel'] },
+  'team-leadership': { title: 'Csapatmunka és vezetés', tags: ['csapatmunka', 'vezetés'] },
+  'boundaries-intimacy': { title: 'Határok és intimitás', tags: ['határok', 'tisztelet'] },
+  'self-feeding-cooking': { title: 'Ételmunka és főzés', tags: ['főzés', 'étel'] },
+  'home-chores': { title: 'Otthoni házimunkák', tags: ['házimunka', 'otthon'] },
+  'organization-systems': { title: 'Rendszerezési rendszerek', tags: ['rendszerezés', 'rendszerek'] },
+  'tools-repair': { title: 'Szerszámok és javítás', tags: ['szerszámok', 'javítás'] },
+  'money-work': { title: 'Pénz és munkaszokások', tags: ['pénz', 'munka'] },
+  'transport-logistics': { title: 'Közlekedés és logisztika', tags: ['közlekedés', 'logisztika'] },
+  'body-boundaries': { title: 'Testhatárok', tags: ['határok', 'beleegyezés'] },
+  'traffic-water-fire': { title: 'Közlekedés, víz és tűz', tags: ['közlekedés', 'víz', 'tűz'] },
+  'digital-privacy': { title: 'Digitális magánszféra', tags: ['digitális', 'magánszféra'] },
+  'substance-risk': { title: 'Szerhasználat és kockázati nyomás', tags: ['szerek', 'nyomás'] },
+  'sexual-health-consent': { title: 'Szexuális egészség és beleegyezés', tags: ['szexuális egészség', 'beleegyezés'] },
+  'emergency-readiness': { title: 'Vészhelyzeti készenlét', tags: ['elsősegély', 'vészhelyzet'] },
+  'sensory-play': { title: 'Érzékszervi játék és képzelet', tags: ['játék', 'képzelet'] },
+  'visual-design': { title: 'Vizuális design', tags: ['rajz', 'design'] },
+  'music-rhythm': { title: 'Zene és ritmus', tags: ['zene', 'ritmus'] },
+  'building-making': { title: 'Építés és készítés', tags: ['építés', 'készítés'] },
+  'performance-story': { title: 'Előadás és történet', tags: ['történet', 'előadás'] },
+  'creative-practice': { title: 'Kreatív gyakorlat', tags: ['gyakorlás', 'javítás'] },
+  'patience-attention': { title: 'Türelem és figyelem', tags: ['türelem', 'figyelem'] },
+  'truth-accountability': { title: 'Igazság és elszámoltathatóság', tags: ['igazság', 'elszámoltathatóság'] },
+  'responsibility-initiative': { title: 'Felelősség és kezdeményezés', tags: ['felelősség', 'kezdeményezés'] },
+  'courage-resilience': { title: 'Bátorság és rugalmasság', tags: ['bátorság', 'rugalmasság'] },
+  'service-citizenship': { title: 'Szolgálat és állampolgárság', tags: ['szolgálat', 'állampolgárság'] },
+  'identity-self-respect': { title: 'Identitás és önbecsülés', tags: ['identitás', 'önbecsülés'] },
+}
+
+function hungarianDefiniteArticle(text: string) {
+  return 'aáeéiíoóöőuúüű'.includes(text.charAt(0).toLocaleLowerCase('hu-HU')) ? 'Az' : 'A'
+}
+
+function uniqueLocalizedTags(tags: string[]) {
+  return Array.from(new Set(tags))
+}
+
+function buildHungarianExpandedSkillCopy() {
+  const generated: Record<string, SkillCopy> = {}
+
+  for (const skill of baseSkills) {
+    if (!skill.generated || !skill.aspectId) {
+      continue
+    }
+
+    const aspect = hungarianGeneratedAspectTitle[skill.aspectId]
+    const stageTitle = hungarianGeneratedStageTitle[skill.stage]
+    const context = hungarianGeneratedStageContext[skill.stage]
+    const aspectLower = aspect.title.toLocaleLowerCase('hu-HU')
+
+    generated[skill.id] = {
+      title: `${stageTitle}: ${aspect.title}`,
+      summary: `${hungarianDefiniteArticle(aspectLower)} ${aspectLower} területét építi ${context.setting}, egyre önállóbb és valóságosabb helyzetekben.`,
+      outcomes: [
+        `Gyakorolja ezt a területet: ${aspectLower}`,
+        `Önállósága nő ezen keresztül: ${context.autonomy}`,
+        `A készség megjelenik ${context.evidence}`,
+      ],
+      tags: uniqueLocalizedTags([
+        hungarianGeneratedDomainShort[skill.domain],
+        stageTitle.toLocaleLowerCase('hu-HU'),
+        ...context.tags,
+        ...aspect.tags,
+      ]),
+    }
+  }
+
+  return generated
+}
+
 const hungarianCopy: LocalizationCopy = {
   ui: hungarianUi,
   treeMeta: {
     profile: 'Fiú alapozó pálya',
-    range: 'Születéstől 10 éves korig',
+    range: 'Születéstől 18 éves korig',
     version: '0.1',
     stance:
-      'Ez az első változat a korai fiúkori fejlődést nagyrészt általános emberi fejlődésként kezeli, későbbi nemspecifikus ágak lehetőségével.',
+      'Ez a pálya a fiúkori és kamaszkori fejlődést nagyrészt általános emberi fejlődésként kezeli, későbbi nemspecifikus ágak lehetőségével.',
   },
   domains: {
     movement: {
@@ -438,6 +625,26 @@ const hungarianCopy: LocalizationCopy = {
       title: 'Nagyobb gyerek',
       age: '9-10 év',
       focus: 'Önálló ítélőképesség, mélyebb tanulás, vezetői magok és felkészülés a pubertásra.',
+    },
+    preteen: {
+      title: 'Kiskamasz',
+      age: '11-12 év',
+      focus: 'Pubertáskezdés, erősebb kortársélet, digitális ítélőképesség, tanulási szokások és tartós felelősségek.',
+    },
+    'early-adolescence': {
+      title: 'Korai kamaszkor',
+      age: '13-14 év',
+      focus: 'Identitás, érzelmi intenzitás, elvont gondolkodás, odatartozás, határok és felügyelt önállóság.',
+    },
+    'middle-adolescence': {
+      title: 'Középső kamaszkor',
+      age: '15-16 év',
+      focus: 'Autonómia, kockázatítélet, mélyebb készségek, munkaszokások, vezetésre készülés és valódi hozzájárulás.',
+    },
+    'late-adolescence': {
+      title: 'Késő kamaszkor',
+      age: '17-18 év',
+      focus: 'Felnőtté válásra készülés, hosszú távú tervezés, egészség felelőssége, intim határok, munka, szolgálat és állampolgári élet.',
     },
   } satisfies Record<StageId, StageCopy>,
   skills: {
@@ -765,6 +972,7 @@ const hungarianCopy: LocalizationCopy = {
       outcomes: ['Akkor is helyesen cselekszik, amikor ez társas kényelmetlenséggel jár', 'Valódi módon szolgálja családját, csapatát, osztályát vagy környékét', 'Saját testét és másokat méltósággal kezeli'],
       tags: ['integritás', 'szolgálat', 'önbecsülés'],
     },
+    ...buildHungarianExpandedSkillCopy(),
   } satisfies Record<string, SkillCopy>,
   domainGuides: {
     movement: {
@@ -778,6 +986,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Játékmozgást, állóképességet, térérzéket és biztonságos esést épít.',
         'middle-childhood': 'Finomítja az állóképességet, kézírást, eszközöket és sportalapokat.',
         'later-childhood': 'Bemelegítést, testtartást, erőalapokat és regenerációt gyakorol.',
+        preteen: 'Növekedési ugrásokhoz, koordinációváltozásokhoz, testtartáshoz és gyakorlási szokásokhoz alkalmazkodik.',
+        'early-adolescence': 'Technikát, regenerációt, testi önbizalmat és nyomás alatti biztonságos versengést gyakorol.',
+        'middle-adolescence': 'Erőt, állóképességet, mobilitást és sérülésmegelőzést épít edzői segítséggel.',
+        'late-adolescence': 'Saját fitneszt, regenerációt, fizikai normákat és egészséges kihívást vállal.',
       },
       practiceLoop: ['Mutasd lassan a mozgást', 'Hagyd játékos változatokkal ismételni', 'Adj hozzá egy kis kihívást, amikor könnyűvé válik'],
       materials: ['szabad padló', 'labdák', 'kockák', 'alacsony mászófelületek', 'papír és ceruzák'],
@@ -794,6 +1006,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Kevesebb emlékeztetővel viszi a reggeli és esti sorrendet.',
         'middle-childhood': 'Összeköti az ételt, alvást, hangulatot, mozgást és koncentrációt.',
         'later-childhood': 'Pubertásra, mosásra, tiszta ruhákra és egészségügyi kérdésekre készül.',
+        preteen: 'Korai pubertást, ápoltságot, alvásváltozásokat és privát egészségügyi kérdéseket kezel.',
+        'early-adolescence': 'Érzelmi helyreállást, táplálkozást, higiéniát és egészségügyi magánszférát gyakorol.',
+        'middle-adolescence': 'Időpontokat, stresszt, alváshiányt, edzést és kockázati beszélgetéseket kezel.',
+        'late-adolescence': 'Egészségügyi rendszerek, biztosítási alapok, gyógyszerek és megelőző ellátás felelősségére készül.',
       },
       practiceLoop: ['Kösd a készséget valódi napi rutinhoz', 'Használj rövid vizuális vagy szóbeli ellenőrzőlistát', 'Fokozatosan adj át egy-egy lépést'],
       materials: ['tükör', 'időzítő', 'szennyeskosár', 'fogkefe', 'vizes palack'],
@@ -810,6 +1026,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Hangokat köt betűkhöz és egyszerű üzeneteket ír.',
         'middle-childhood': 'Tanuláshoz olvas, bekezdéseket ír és véleményeket magyaráz.',
         'later-childhood': 'Kutat, okokat idéz és sértés nélkül vitatkozik.',
+        preteen: 'Olvasást, írást, keresést és beszélgetést használ hosszabb iskolai és személyes projektekhez.',
+        'early-adolescence': 'Bizonyítékkal érvel, érzelem alatt is figyel, és védi digitális hangját.',
+        'middle-adolescence': 'Valódi közönségnek ír, prezentál, interjúzik és kutat.',
+        'late-adolescence': 'Felnőtt módon kommunikál munkahelyi, iskolai, állampolgári és intim helyzetekben.',
       },
       practiceLoop: ['Beszéljetek arról, ami épp történik', 'Hívd meg, hogy magyarázza vissza', 'Adj hozzá egy új szót, okot vagy mondatszerkezetet'],
       materials: ['könyvek', 'címkék', 'papír', 'történetkártyák', 'családi beszélgetések'],
@@ -826,6 +1046,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Összead, kivon, időt olvas és problémalépéseket magyaráz.',
         'middle-childhood': 'Szorzást, pénzt, mérést és térképeket használ.',
         'later-childhood': 'Nagyobb feladatokat tervez, következményeket becsül és átváltásokat hasonlít.',
+        preteen: 'Többlépéses iskolai munkát, pénzdöntéseket, digitális információt és beosztást kezel.',
+        'early-adolescence': 'Elvontabban gondolkodik rendszerekről, ösztönzőkről, bizonyítékról és következményekről.',
+        'middle-adolescence': 'Tervezést, adatokat, költségvetést és kockázatelemzést használ valódi döntésekben.',
+        'late-adolescence': 'Felnőtt átmeneteket tervez, életutakat hasonlít össze és hosszú távú átváltásokon gondolkodik.',
       },
       practiceLoop: ['Kezdj konkrét tárgyi problémával', 'Kérdezd meg, mi változott vagy mi jön ezután', 'Hagyd, hogy szavakkal vagy rajzzal mutassa a lépéseket'],
       materials: ['érmék', 'kockák', 'mérőszalag', 'naptár', 'térképek'],
@@ -842,6 +1066,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Fair playt, csoportszabályokat, bocsánatkérést és bevonást használ.',
         'middle-childhood': 'Csapatokat, hírnevet, csúfolást, nyomást és lojalitást kezel.',
         'later-childhood': 'Nyugodtan vezet, határokat állít és nyomás alatt is tartja a lelkiismeretét.',
+        preteen: 'Pubertást, erősebb összehasonlítást, odatartozást és digitális hírnevet kezel.',
+        'early-adolescence': 'Barátságokat, határokat, jóvátételt és identitást tart meg erősebb érzelmek alatt.',
+        'middle-adolescence': 'Ismerkedési határokat, csapatvezetést, hírnevet és társas bátorságot gyakorol.',
+        'late-adolescence': 'Felnőtt barátságot, intimitást, együttműködést és közösségi hozzájárulást épít.',
       },
       practiceLoop: ['Nevezd meg egyszerűen a társas helyzetet', 'Gyakoroljátok a pontos mondatokat', 'Hibák után gyorsan javítsatok'],
       materials: ['váltakozós játékok', 'érzelemkártyák', 'csapat házimunkák', 'szerepjáték ötletek'],
@@ -858,6 +1086,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Táskát pakol, terít, törölközőt hajtogat és uzsonnát készít.',
         'middle-childhood': 'Szerszámokat használ, egyszerű ételeket főz, tereket gondoz és rendszerez.',
         'later-childhood': 'Főz, takarít, tervez, javít és közös erőforrásokat gondoz.',
+        preteen: 'Személyes rendszereket, egyszerű ételeket, házimunkát, helyi ügyeket és időtervezést vállal.',
+        'early-adolescence': 'Szerszámokat, pénzt, közlekedést, naptárakat és közös tereket használ önállóbban.',
+        'middle-adolescence': 'Munkaszokásokat, közlekedési készültséget, költségvetést és gyakorlati megbízhatóságot épít.',
+        'late-adolescence': 'Önálló életre, munkára, dokumentumokra, pénzre és háztartási normákra készül.',
       },
       practiceLoop: ['Adj neki valódi munkát valódi anyagokkal', 'Tedd láthatóvá a szintet', 'Engedd, hogy az ismétlés kompetenciát építsen'],
       materials: ['kosár', 'rongy', 'biztonságos eszközök', 'egyszerű szerszámok', 'címkék'],
@@ -874,6 +1106,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Közlekedési, vízi, tűzvédelmi, cím- és vészhelyzeti alapokat használ.',
         'middle-childhood': 'Online magánszférát véd és közösségi határok között tájékozódik.',
         'later-childhood': 'Kockázatot ítél meg, felismeri a veszélyes nyomást és alap elsősegélyt használ.',
+        preteen: 'Telefonokat, magánszférát, pubertáskori határokat, kihívásokat és közösségi mozgást kezel.',
+        'early-adolescence': 'Ellenáll manipulációnak, veszélyes titkolózásnak, szerhasználati nyomásnak és digitális csapdáknak.',
+        'middle-adolescence': 'Vezetési helyzetekre, randibiztonságra, bulikra, munkahelyekre és vészhelyzetekre készül.',
+        'late-adolescence': 'Felnőtt biztonsági ítéletet, beleegyezést, egészségkockázatot, krízisválaszt és jogi téteket vállal.',
       },
       practiceLoop: ['Tanítsd meg a szabályt a kockázatos helyzet előtt', 'Próbáljátok el a pontos cselekvést', 'A helyzet után nyugodtan beszéljétek át'],
       materials: ['családi biztonsági szavak', 'vészhelyzeti kártya', 'gyakorló telefon', 'elsősegély készlet'],
@@ -890,6 +1126,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Kis kreatív projekteket fejez be frusztrációtámogatással.',
         'middle-childhood': 'Mesterséget javít, közönséggel oszt meg és mintákból tanul.',
         'later-childhood': 'Hangot, gyakorlási szokásokat, hatásokat és jelentős munkát fejleszt.',
+        preteen: 'Ízlést, rajongásokat, eszközöket és korai portfóliószokásokat használ identitásfelfedezéshez.',
+        'early-adolescence': 'Érzelmet és identitást fegyelmezett alkotássá és előadássá alakít.',
+        'middle-adolescence': 'Visszajelzéssel, közönséggel, korlátokkal és tartós projektekkel finomítja mesterségét.',
+        'late-adolescence': 'Érettebb kreatív gyakorlatot, portfóliót, ízlést és hozzájárulást épít.',
       },
       practiceLoop: ['Adj olyan anyagokat, ahol nincs egyetlen jó válasz', 'Kérdezd meg, mit készít vagy próbál', 'Segíts egy döntés javításában'],
       materials: ['papír', 'kockák', 'zene', 'jelmezek', 'újrahasznosított anyagok'],
@@ -906,6 +1146,10 @@ const hungarianCopy: LocalizationCopy = {
         'early-school': 'Kis vállalásokat tart be és tiszteli a közös tulajdont.',
         'middle-childhood': 'Vállalja a hibákat, nehéz dolgokat próbál és megvéd fair szabályokat.',
         'later-childhood': 'Az erőt integritással, szolgálattal, alázattal és méltósággal köti össze.',
+        preteen: 'Őszinteséget, türelmet és önbecsülést tart meg összehasonlítás és kortárs nyomás alatt.',
+        'early-adolescence': 'Identitást, bátorságot, alázatot, szolgálatot és jóvátételt formál érzelmi intenzitásban.',
+        'middle-adolescence': 'Elszámoltathatóságot, munkamorált, önfegyelmet és elvi kockázatvállalást gyakorol.',
+        'late-adolescence': 'Felnőtt jellemre készül: integritásra, szolgálatra, gondnokságra, méltóságra és célra.',
       },
       practiceLoop: ['Nevezd meg az értéket egy konkrét pillanatban', 'Adj kis felelősséget követéssel', 'Szégyenítés nélkül nézzétek át, mi történt'],
       materials: ['családi feladatok', 'javító mondat', 'szolgálati lehetőségek', 'reflexiós kérdések'],
@@ -919,6 +1163,10 @@ const hungarianCopy: LocalizationCopy = {
     'early-school': ['Hagyd, hogy elmagyarázza a szabályt vagy sorrendet', 'Tedd a munkát hasznossá otthon, osztályban vagy játékban'],
     'middle-childhood': ['Adj felelősséget, visszajelzést és mérhető javulást', 'Hagyd stratégiákat összehasonlítani'],
     'later-childhood': ['Hívd be az ítélőképességet, tervezést és reflexiót', 'Kösd a készséget méltósághoz és hozzájáruláshoz'],
+    preteen: ['Tedd konkréttá a készséget pubertás-, kortárs-, digitális és iskolai helyzetekben', 'Hagyd, hogy kövesse a haladást és segítséget kérjen'],
+    'early-adolescence': ['Párosítsd az önállóságot kimondott határokkal és őszinte átbeszéléssel', 'Valódi helyzeteket használj, ne csak magyarázatot'],
+    'middle-adolescence': ['Adj értelmes felelősséget látható normákkal', 'Kapcsold a gyakorlást munkához, kapcsolatokhoz, kockázathoz és jövőbeli utakhoz'],
+    'late-adolescence': ['Mozgasd felnőtt felelősség felé tanácsadó támogatással', 'Kérj terveket, bizonyítékot, reflexiót és jóvátételt'],
   } satisfies Record<StageId, string[]>,
   viewModes: [
     { id: 'world', label: 'Világ' },

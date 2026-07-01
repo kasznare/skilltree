@@ -16,6 +16,66 @@ export type StageId =
   | 'early-school'
   | 'middle-childhood'
   | 'later-childhood'
+  | 'preteen'
+  | 'early-adolescence'
+  | 'middle-adolescence'
+  | 'late-adolescence'
+
+export type SkillAspectId =
+  | 'body-control'
+  | 'fine-control'
+  | 'stamina'
+  | 'athletic-practice'
+  | 'recovery-posture'
+  | 'physical-confidence'
+  | 'sleep-recovery'
+  | 'food-nutrition'
+  | 'hygiene-grooming'
+  | 'body-literacy'
+  | 'emotional-regulation'
+  | 'health-advocacy'
+  | 'listening-attention'
+  | 'spoken-expression'
+  | 'reading-comprehension'
+  | 'writing-composition'
+  | 'research-media'
+  | 'discussion-rhetoric'
+  | 'number-sense'
+  | 'spatial-systems'
+  | 'scientific-inquiry'
+  | 'planning-executive'
+  | 'money-data'
+  | 'logic-tradeoffs'
+  | 'belonging-attachment'
+  | 'empathy-perspective'
+  | 'friendship-belonging'
+  | 'conflict-repair'
+  | 'team-leadership'
+  | 'boundaries-intimacy'
+  | 'self-feeding-cooking'
+  | 'home-chores'
+  | 'organization-systems'
+  | 'tools-repair'
+  | 'money-work'
+  | 'transport-logistics'
+  | 'body-boundaries'
+  | 'traffic-water-fire'
+  | 'digital-privacy'
+  | 'substance-risk'
+  | 'sexual-health-consent'
+  | 'emergency-readiness'
+  | 'sensory-play'
+  | 'visual-design'
+  | 'music-rhythm'
+  | 'building-making'
+  | 'performance-story'
+  | 'creative-practice'
+  | 'patience-attention'
+  | 'truth-accountability'
+  | 'responsibility-initiative'
+  | 'courage-resilience'
+  | 'service-citizenship'
+  | 'identity-self-respect'
 
 export type Domain = {
   id: DomainId
@@ -37,6 +97,8 @@ export type SkillNode = {
   title: string
   domain: DomainId
   stage: StageId
+  aspectId?: SkillAspectId
+  generated?: boolean
   summary: string
   outcomes: string[]
   prerequisites: string[]
@@ -45,10 +107,10 @@ export type SkillNode = {
 
 export const treeMeta = {
   profile: 'Male foundation track',
-  range: 'Birth to age 10',
+  range: 'Birth to age 18',
   version: '0.1',
   stance:
-    'This first pass treats early boyhood as mostly universal human development, with room for gender-specific branches later.',
+    'This track treats boyhood and adolescence as mostly universal human development, with room for gender-specific branches later.',
 }
 
 export const domains: Domain[] = [
@@ -154,9 +216,33 @@ export const stages: Stage[] = [
     age: '9-10 yrs',
     focus: 'Independent judgment, deeper study, leadership seeds, and puberty preparation.',
   },
+  {
+    id: 'preteen',
+    title: 'Preteen',
+    age: '11-12 yrs',
+    focus: 'Puberty onset, stronger peer life, digital judgment, study habits, and first durable responsibilities.',
+  },
+  {
+    id: 'early-adolescence',
+    title: 'Early adolescence',
+    age: '13-14 yrs',
+    focus: 'Identity, emotion intensity, abstract thinking, belonging, boundaries, and supervised independence.',
+  },
+  {
+    id: 'middle-adolescence',
+    title: 'Middle adolescence',
+    age: '15-16 yrs',
+    focus: 'Autonomy, risk judgment, skill depth, work habits, driving preparation, and real contribution.',
+  },
+  {
+    id: 'late-adolescence',
+    title: 'Late adolescence',
+    age: '17-18 yrs',
+    focus: 'Adult readiness, long-range planning, health ownership, intimate boundaries, work, service, and civic life.',
+  },
 ]
 
-export const skills: SkillNode[] = [
+const coreSkills: SkillNode[] = [
   {
     id: 'core-strength-and-senses',
     title: 'Core strength and senses',
@@ -698,3 +784,237 @@ export const skills: SkillNode[] = [
     tags: ['integrity', 'service', 'self-respect'],
   },
 ]
+
+export type SkillExpansionAspect = {
+  id: SkillAspectId
+  title: string
+  practice: string
+  standard: string
+  proof: string
+  tags: string[]
+  crossPrerequisites?: Array<{ domain: DomainId; aspectId: SkillAspectId }>
+}
+
+export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
+  movement: [
+    { id: 'body-control', title: 'Body control', practice: 'coordinated movement', standard: 'balance and control', proof: 'safe body choices', tags: ['body', 'coordination'] },
+    { id: 'fine-control', title: 'Fine control', practice: 'hands, grip, and precision', standard: 'controlled hand use', proof: 'better tool handling', tags: ['hands', 'fine motor'] },
+    { id: 'stamina', title: 'Stamina', practice: 'endurance and active play', standard: 'steady effort', proof: 'less fatigue and better pacing', tags: ['stamina', 'fitness'] },
+    { id: 'athletic-practice', title: 'Athletic practice', practice: 'sport, dance, game, or training patterns', standard: 'coachability and repeated practice', proof: 'visible skill improvement', tags: ['sport', 'practice'] },
+    { id: 'recovery-posture', title: 'Recovery and posture', practice: 'warmups, posture, sleep, and recovery habits', standard: 'body maintenance', proof: 'fewer avoidable aches and safer mechanics', tags: ['posture', 'recovery'] },
+    { id: 'physical-confidence', title: 'Physical confidence', practice: 'safe challenge and physical self-trust', standard: 'calm risk judgment', proof: 'confident movement without recklessness', tags: ['confidence', 'risk'] },
+  ],
+  care: [
+    { id: 'sleep-recovery', title: 'Sleep and recovery', practice: 'sleep rhythms and rest cues', standard: 'restorative routine', proof: 'better mood and energy', tags: ['sleep', 'recovery'] },
+    { id: 'food-nutrition', title: 'Food and nutrition', practice: 'food choices, hunger cues, and meal skills', standard: 'balanced fueling', proof: 'stable energy and body respect', tags: ['food', 'nutrition'] },
+    { id: 'hygiene-grooming', title: 'Hygiene and grooming', practice: 'cleanliness, grooming, and clothes care', standard: 'consistent personal care', proof: 'clean body, clothes, and spaces', tags: ['hygiene', 'grooming'] },
+    { id: 'body-literacy', title: 'Body literacy', practice: 'naming body signals, puberty, pain, and health questions', standard: 'accurate body awareness', proof: 'clear, shame-free questions', tags: ['body', 'puberty'] },
+    { id: 'emotional-regulation', title: 'Emotional regulation', practice: 'calming, naming feelings, and recovery', standard: 'self-regulation with support', proof: 'faster repair after stress', tags: ['emotion', 'regulation'] },
+    { id: 'health-advocacy', title: 'Health advocacy', practice: 'appointments, symptoms, privacy, and trusted adult help', standard: 'appropriate help-seeking', proof: 'timely care and honest reporting', tags: ['health', 'advocacy'] },
+  ],
+  language: [
+    { id: 'listening-attention', title: 'Listening and attention', practice: 'listening, following, and remembering', standard: 'sustained attention', proof: 'accurate responses and follow-through', tags: ['listening', 'attention'] },
+    { id: 'spoken-expression', title: 'Spoken expression', practice: 'speaking clearly, asking, and explaining', standard: 'clear expression', proof: 'others understand his intent', tags: ['speaking', 'questions'] },
+    { id: 'reading-comprehension', title: 'Reading comprehension', practice: 'reading for meaning and stamina', standard: 'text understanding', proof: 'retell, inference, and use of text', tags: ['reading', 'comprehension'] },
+    { id: 'writing-composition', title: 'Writing composition', practice: 'sentences, paragraphs, notes, and longer writing', standard: 'organized writing', proof: 'clear written ideas', tags: ['writing', 'composition'] },
+    { id: 'research-media', title: 'Research and media judgment', practice: 'sources, search, evidence, and media checks', standard: 'source judgment', proof: 'claims backed by evidence', tags: ['research', 'media'] },
+    { id: 'discussion-rhetoric', title: 'Discussion and rhetoric', practice: 'conversation, disagreement, presentation, and persuasion', standard: 'respectful argument', proof: 'reasons without insults', tags: ['discussion', 'debate'] },
+  ],
+  reasoning: [
+    { id: 'number-sense', title: 'Number sense', practice: 'quantity, operations, and practical math', standard: 'accurate calculation', proof: 'math used in real tasks', tags: ['math', 'number'] },
+    { id: 'spatial-systems', title: 'Spatial and systems thinking', practice: 'patterns, maps, models, and systems', standard: 'system awareness', proof: 'parts and relationships explained', tags: ['spatial', 'systems'] },
+    { id: 'scientific-inquiry', title: 'Scientific inquiry', practice: 'observing, testing, comparing, and revising', standard: 'evidence-based thinking', proof: 'better guesses after feedback', tags: ['science', 'inquiry'] },
+    { id: 'planning-executive', title: 'Planning and executive function', practice: 'planning, sequencing, memory, and follow-through', standard: 'task management', proof: 'tasks completed with fewer rescues', tags: ['planning', 'executive'] },
+    { id: 'money-data', title: 'Money and data', practice: 'money, data, measurement, budgets, and tradeoffs', standard: 'practical numeracy', proof: 'numbers guide choices', tags: ['money', 'data'] },
+    { id: 'logic-tradeoffs', title: 'Logic and tradeoffs', practice: 'logic, consequences, alternatives, and decisions', standard: 'reasoned judgment', proof: 'choices explained before action', tags: ['logic', 'judgment'] },
+  ],
+  social: [
+    { id: 'belonging-attachment', title: 'Belonging and attachment', practice: 'trust, connection, and secure belonging', standard: 'safe connection', proof: 'seeks and gives support appropriately', tags: ['belonging', 'attachment'] },
+    { id: 'empathy-perspective', title: 'Empathy and perspective', practice: 'noticing feelings, motives, and viewpoints', standard: 'perspective-taking', proof: 'kindness without losing boundaries', tags: ['empathy', 'perspective'] },
+    { id: 'friendship-belonging', title: 'Friendship and belonging', practice: 'friendship, inclusion, loyalty, and peer judgment', standard: 'healthy friendship', proof: 'belonging without cruelty', tags: ['friendship', 'peers'] },
+    { id: 'conflict-repair', title: 'Conflict and repair', practice: 'conflict words, apologies, negotiation, and repair', standard: 'repair skill', proof: 'conflict resolves with less harm', tags: ['conflict', 'repair'] },
+    { id: 'team-leadership', title: 'Teamwork and leadership', practice: 'teams, roles, service, and calm leadership', standard: 'shared contribution', proof: 'helps groups work better', tags: ['teamwork', 'leadership'] },
+    { id: 'boundaries-intimacy', title: 'Boundaries and intimacy', practice: 'privacy, respect, attraction, and relational boundaries', standard: 'respectful boundaries', proof: 'closeness stays dignified and mutual', tags: ['boundaries', 'respect'] },
+  ],
+  practical: [
+    { id: 'self-feeding-cooking', title: 'Food work and cooking', practice: 'feeding, cooking, kitchen cleanup, and food safety', standard: 'useful food competence', proof: 'safe food help or meals', tags: ['cooking', 'food'] },
+    { id: 'home-chores', title: 'Home chores', practice: 'cleaning, laundry, surfaces, and shared spaces', standard: 'dependable household contribution', proof: 'spaces improve because of him', tags: ['chores', 'home'] },
+    { id: 'organization-systems', title: 'Organization systems', practice: 'bags, calendars, supplies, rooms, and routines', standard: 'personal systems', proof: 'fewer lost items and missed steps', tags: ['organization', 'systems'] },
+    { id: 'tools-repair', title: 'Tools and repair', practice: 'safe tools, maintenance, fixing, and making', standard: 'tool respect', proof: 'repairs attempted safely', tags: ['tools', 'repair'] },
+    { id: 'money-work', title: 'Money and work habits', practice: 'earning, saving, spending, work ethic, and value', standard: 'resource responsibility', proof: 'money and effort choices improve', tags: ['money', 'work'] },
+    { id: 'transport-logistics', title: 'Transport and logistics', practice: 'routes, packing, timing, transit, and local navigation', standard: 'movement through the world', proof: 'arrives prepared and on time', tags: ['transport', 'logistics'] },
+  ],
+  safety: [
+    { id: 'body-boundaries', title: 'Body boundaries', practice: 'body privacy, consent, trusted adults, and refusal words', standard: 'body autonomy', proof: 'unsafe secrecy is reported', tags: ['boundaries', 'consent'] },
+    { id: 'traffic-water-fire', title: 'Traffic, water, and fire', practice: 'roads, water, heat, fire, tools, and weather rules', standard: 'environmental safety', proof: 'danger rules used without panic', tags: ['traffic', 'water', 'fire'] },
+    { id: 'digital-privacy', title: 'Digital privacy', practice: 'passwords, photos, messages, location, and online reputation', standard: 'digital boundaries', proof: 'private information stays protected', tags: ['digital', 'privacy'] },
+    { id: 'substance-risk', title: 'Substance and risk pressure', practice: 'substance refusal, dares, manipulation, and unsafe pressure', standard: 'pressure resistance', proof: 'risk is named before it escalates', tags: ['substances', 'pressure'] },
+    { id: 'sexual-health-consent', title: 'Sexual health and consent', practice: 'puberty, attraction, consent, contraception basics, and dignity', standard: 'age-appropriate sexual health judgment', proof: 'questions go to trusted adults and reliable sources', tags: ['sexual health', 'consent'] },
+    { id: 'emergency-readiness', title: 'Emergency readiness', practice: 'first aid, emergency calls, crisis plans, and calm action', standard: 'emergency response', proof: 'gets help quickly and accurately', tags: ['first aid', 'emergency'] },
+  ],
+  creativity: [
+    { id: 'sensory-play', title: 'Sensory play and imagination', practice: 'play, imagination, texture, rhythm, and role', standard: 'open-ended exploration', proof: 'ideas become visible through play', tags: ['play', 'imagination'] },
+    { id: 'visual-design', title: 'Visual design', practice: 'drawing, design, layout, color, and visual choices', standard: 'visual expression', proof: 'images communicate intent', tags: ['drawing', 'design'] },
+    { id: 'music-rhythm', title: 'Music and rhythm', practice: 'music, rhythm, listening, timing, and practice', standard: 'musical pattern sense', proof: 'sound or rhythm improves through repetition', tags: ['music', 'rhythm'] },
+    { id: 'building-making', title: 'Building and making', practice: 'materials, craft, prototypes, and construction', standard: 'made-object thinking', proof: 'objects work better after revision', tags: ['building', 'making'] },
+    { id: 'performance-story', title: 'Performance and story', practice: 'story, voice, performance, audience, and presence', standard: 'expressive courage', proof: 'shares work with intention', tags: ['story', 'performance'] },
+    { id: 'creative-practice', title: 'Creative practice', practice: 'taste, influences, revision, habits, and finished work', standard: 'creative discipline', proof: 'work improves through cycles', tags: ['practice', 'revision'] },
+  ],
+  character: [
+    { id: 'patience-attention', title: 'Patience and attention', practice: 'waiting, focus, frustration tolerance, and persistence', standard: 'steady attention', proof: 'stays with hard things longer', tags: ['patience', 'attention'] },
+    { id: 'truth-accountability', title: 'Truth and accountability', practice: 'honesty, apology, ownership, and restitution', standard: 'truthful repair', proof: 'mistakes become responsibility', tags: ['truth', 'accountability'] },
+    { id: 'responsibility-initiative', title: 'Responsibility and initiative', practice: 'commitments, initiative, follow-through, and reliability', standard: 'dependable action', proof: 'others can count on him', tags: ['responsibility', 'initiative'] },
+    { id: 'courage-resilience', title: 'Courage and resilience', practice: 'fear, setbacks, hard attempts, and recovery', standard: 'brave persistence', proof: 'tries again after difficulty', tags: ['courage', 'resilience'] },
+    { id: 'service-citizenship', title: 'Service and citizenship', practice: 'helping, community, fairness, and contribution', standard: 'prosocial contribution', proof: 'strength serves others', tags: ['service', 'citizenship'] },
+    { id: 'identity-self-respect', title: 'Identity and self-respect', practice: 'values, identity, humility, dignity, and self-respect', standard: 'grounded selfhood', proof: 'acts from values under pressure', tags: ['identity', 'self-respect'] },
+  ],
+}
+
+type StageExpansionTheme = {
+  prefix: string
+  setting: string
+  autonomy: string
+  evidence: string
+  tags: string[]
+}
+
+const stageExpansionThemes: Record<StageId, StageExpansionTheme> = {
+  infancy: {
+    prefix: 'Baby',
+    setting: 'warm caregiver-led routines',
+    autonomy: 'signals, brief participation, and repeated exposure',
+    evidence: 'small repeated signs of readiness',
+    tags: ['baby', 'foundation'],
+  },
+  toddler: {
+    prefix: 'Toddler',
+    setting: 'simple routines, imitation, and one-step choices',
+    autonomy: 'adult-guided attempts and short repetitions',
+    evidence: 'more attempts with less distress',
+    tags: ['toddler', 'practice'],
+  },
+  preschool: {
+    prefix: 'Preschool',
+    setting: 'play, stories, visible routines, and small jobs',
+    autonomy: 'guided choices and repair after mistakes',
+    evidence: 'skill appearing in play and daily routines',
+    tags: ['preschool', 'play'],
+  },
+  'early-school': {
+    prefix: 'Early school',
+    setting: 'home, classroom, games, and useful helping',
+    autonomy: 'explaining steps and following short sequences',
+    evidence: 'more dependable follow-through',
+    tags: ['school', 'sequence'],
+  },
+  'middle-childhood': {
+    prefix: 'Middle childhood',
+    setting: 'teams, study, chores, hobbies, and peer life',
+    autonomy: 'measurable improvement and feedback use',
+    evidence: 'competence that others can notice',
+    tags: ['competence', 'feedback'],
+  },
+  'later-childhood': {
+    prefix: 'Later childhood',
+    setting: 'larger responsibilities, independent practice, and puberty preparation',
+    autonomy: 'judgment, reflection, and planning with oversight',
+    evidence: 'better decisions before adults step in',
+    tags: ['judgment', 'preteen'],
+  },
+  preteen: {
+    prefix: 'Preteen',
+    setting: 'peer groups, puberty changes, online spaces, and longer assignments',
+    autonomy: 'self-monitoring, asking for help, and owning routines',
+    evidence: 'safer independence in familiar settings',
+    tags: ['preteen', 'puberty'],
+  },
+  'early-adolescence': {
+    prefix: 'Early adolescence',
+    setting: 'identity work, stronger emotions, teams, phones, and community spaces',
+    autonomy: 'negotiated independence and honest reflection',
+    evidence: 'choices that hold under peer pressure',
+    tags: ['adolescence', 'identity'],
+  },
+  'middle-adolescence': {
+    prefix: 'Middle adolescence',
+    setting: 'deeper study, work practice, transport, relationships, and risk decisions',
+    autonomy: 'planning ahead and taking supervised responsibility',
+    evidence: 'reliable behavior when stakes are higher',
+    tags: ['teen', 'autonomy'],
+  },
+  'late-adolescence': {
+    prefix: 'Late adolescence',
+    setting: 'adult transitions, work, civic life, health systems, and long-range plans',
+    autonomy: 'adult-level ownership with advice when needed',
+    evidence: 'readiness for life beyond the household',
+    tags: ['adult readiness', 'transition'],
+  },
+}
+
+function generatedSkillId(domain: DomainId, stage: StageId, aspectId: SkillAspectId) {
+  return `${domain}-${stage}-${aspectId}`
+}
+
+function uniqueTags(tags: string[]) {
+  return Array.from(new Set(tags))
+}
+
+function buildExpandedSkills() {
+  const expanded: SkillNode[] = []
+  const stageIds = stages.map((stage) => stage.id)
+  const anchorByStageDomain = new Map(coreSkills.map((skill) => [`${skill.stage}:${skill.domain}`, skill.id]))
+
+  for (const domain of domains) {
+    const aspects = skillExpansionAspects[domain.id]
+
+    for (const [stageIndex, stage] of stages.entries()) {
+      const theme = stageExpansionThemes[stage.id]
+      const previousStageId = stageIds[stageIndex - 1]
+      const anchorId = anchorByStageDomain.get(`${stage.id}:${domain.id}`)
+
+      for (const [aspectIndex, aspect] of aspects.entries()) {
+        const prerequisites = new Set<string>()
+
+        if (anchorId) {
+          prerequisites.add(anchorId)
+        }
+
+        if (previousStageId) {
+          prerequisites.add(generatedSkillId(domain.id, previousStageId, aspect.id))
+        }
+
+        if (aspectIndex > 0) {
+          prerequisites.add(generatedSkillId(domain.id, stage.id, aspects[aspectIndex - 1].id))
+        }
+
+        for (const crossPrerequisite of aspect.crossPrerequisites ?? []) {
+          if (previousStageId) {
+            prerequisites.add(generatedSkillId(crossPrerequisite.domain, previousStageId, crossPrerequisite.aspectId))
+          }
+        }
+
+        expanded.push({
+          id: generatedSkillId(domain.id, stage.id, aspect.id),
+          title: `${theme.prefix}: ${aspect.title}`,
+          domain: domain.id,
+          stage: stage.id,
+          aspectId: aspect.id,
+          generated: true,
+          summary: `Builds ${aspect.practice} through ${theme.setting}, moving toward ${aspect.standard}.`,
+          outcomes: [
+            `Practices ${aspect.practice}`,
+            `Uses ${aspect.standard} with ${theme.autonomy}`,
+            `Shows ${aspect.proof} through ${theme.evidence}`,
+          ],
+          prerequisites: Array.from(prerequisites),
+          tags: uniqueTags([domain.shortLabel.toLowerCase(), stage.title.toLowerCase(), ...theme.tags, ...aspect.tags]),
+        })
+      }
+    }
+  }
+
+  return expanded
+}
+
+export const expandedSkills = buildExpandedSkills()
+export const skills: SkillNode[] = [...coreSkills, ...expandedSkills]

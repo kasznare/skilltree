@@ -99,7 +99,7 @@ const domainIcons: Record<DomainId, LucideIcon> = {
   character: BadgeCheck,
 }
 
-const defaultSkillId = 'secure-attachment'
+const defaultSkillId = 'social-infancy-belonging-attachment'
 
 const nodeWidth = 218
 const nodeHeight = 126
@@ -231,6 +231,67 @@ function SkillTreeApp() {
   ).length
   const activeFocusCount =
     Number(Boolean(normalizedQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
+  const renderedSkillIds = useMemo(() => {
+    const ids = new Set<string>()
+
+    if (viewMode === 'world') {
+      for (const skill of skills) {
+        ids.add(skill.id)
+      }
+
+      return ids
+    }
+
+    ids.add(selectedSkill.id)
+
+    if (viewMode === 'node') {
+      for (const id of directPrerequisiteIds) {
+        ids.add(id)
+      }
+
+      for (const id of directUnlockIds) {
+        ids.add(id)
+      }
+    } else {
+      for (const id of lineageIds) {
+        ids.add(id)
+      }
+    }
+
+    if (activeFocusCount > 0) {
+      for (const skill of skills) {
+        const missesSearch = Boolean(normalizedQuery) && !matchedIds.has(skill.id)
+        const outsideDomain = focusedDomain !== 'all' && skill.domain !== focusedDomain
+        const outsideStage = focusedStage !== 'all' && skill.stage !== focusedStage
+
+        if (!missesSearch && !outsideDomain && !outsideStage) {
+          ids.add(skill.id)
+        }
+      }
+    }
+
+    return ids
+  }, [
+    activeFocusCount,
+    directPrerequisiteIds,
+    directUnlockIds,
+    focusedDomain,
+    focusedStage,
+    lineageIds,
+    matchedIds,
+    normalizedQuery,
+    selectedSkill.id,
+    skills,
+    viewMode,
+  ])
+  const renderedSkills = useMemo(
+    () => skills.filter((skill) => renderedSkillIds.has(skill.id)),
+    [renderedSkillIds, skills],
+  )
+  const renderedGraphEdges = useMemo(
+    () => graphEdges.filter(({ from, to }) => renderedSkillIds.has(from.id) && renderedSkillIds.has(to.id)),
+    [graphEdges, renderedSkillIds],
+  )
 
   useEffect(() => {
     saveLanguage(language)
@@ -259,12 +320,12 @@ function SkillTreeApp() {
 
     async function layoutGraph() {
       const laidOut = await getLayoutedGraph(
-        skills.map((skill) => ({
+        renderedSkills.map((skill) => ({
           id: skill.id,
           width: nodeWidth,
           height: nodeHeight,
         })),
-        graphEdges.map(({ from, to }) => ({
+        renderedGraphEdges.map(({ from, to }) => ({
           id: `${from.id}->${to.id}`,
           sources: [from.id],
           targets: [to.id],
@@ -275,7 +336,7 @@ function SkillTreeApp() {
         return
       }
 
-      const nextNodes: Node<SkillNodeData>[] = skills.map((skill) => {
+      const nextNodes: Node<SkillNodeData>[] = renderedSkills.map((skill) => {
         const layoutNode = laidOut.children?.find((child) => child.id === skill.id)
         const domain = domainById.get(skill.domain) ?? domains[0]
         const stage = stageLabelById.get(skill.stage) ?? stages[0]
@@ -327,7 +388,7 @@ function SkillTreeApp() {
         }
       })
 
-      const nextEdges: Edge[] = graphEdges.map(({ from, to }) => {
+      const nextEdges: Edge[] = renderedGraphEdges.map(({ from, to }) => {
         const sourceRelated = lineageIds.has(from.id)
         const targetRelated = lineageIds.has(to.id)
         const direct =
@@ -395,11 +456,12 @@ function SkillTreeApp() {
     fitView,
     focusedDomain,
     focusedStage,
-    graphEdges,
     graphRoles,
     lineageIds,
     matchedIds,
     normalizedQuery,
+    renderedGraphEdges,
+    renderedSkills,
     selectedSkill,
     setEdges,
     setNodes,
@@ -813,8 +875,8 @@ function SkillTreeApp() {
                 {ui.detail.domainMap}
               </h3>
               <div className="subdomain-cloud">
-                {selectedGuide.subdomains.map((subdomain) => (
-                  <span key={subdomain}>{subdomain}</span>
+                {selectedGuide.subdomains.map((subdomain, index) => (
+                  <span key={`${selectedDomain.id}-subdomain-${index}`}>{subdomain}</span>
                 ))}
               </div>
               <p>{selectedGuide.growthArc[selectedSkill.stage] ?? selectedDomain.description}</p>
@@ -826,8 +888,8 @@ function SkillTreeApp() {
                 {ui.detail.outcomes}
               </h3>
               <ul className="outcome-list">
-                {selectedSkill.outcomes.map((outcome) => (
-                  <li key={outcome}>{outcome}</li>
+                {selectedSkill.outcomes.map((outcome, index) => (
+                  <li key={`${selectedSkill.id}-outcome-${index}`}>{outcome}</li>
                 ))}
               </ul>
             </div>
@@ -838,8 +900,8 @@ function SkillTreeApp() {
                 {ui.detail.waysToBuild}
               </h3>
               <ol>
-                {selectedPracticePlan.map((step) => (
-                  <li key={step}>{step}</li>
+                {selectedPracticePlan.map((step, index) => (
+                  <li key={`${selectedSkill.id}-practice-${index}`}>{step}</li>
                 ))}
               </ol>
             </div>
@@ -860,8 +922,8 @@ function SkillTreeApp() {
             />
 
             <div className="tag-row" aria-label={ui.detail.tags}>
-              {selectedSkill.tags.map((tag) => (
-                <button key={tag} type="button" onClick={() => setQuery(tag)}>
+              {selectedSkill.tags.map((tag, index) => (
+                <button key={`${selectedSkill.id}-tag-${index}`} type="button" onClick={() => setQuery(tag)}>
                   #{tag}
                 </button>
               ))}
@@ -951,7 +1013,7 @@ function DomainIntroImage({ domain, guide, imageLabel }: { domain: Domain; guide
           strokeDasharray="6 10"
         />
         {guide.imageMotifs.map((motif, index) => (
-          <g key={motif} transform={`translate(${70 + index * 92} ${76 + (index % 2) * 28})`}>
+          <g key={`${domain.id}-motif-${index}`} transform={`translate(${70 + index * 92} ${76 + (index % 2) * 28})`}>
             <circle r="27" fill="#fffefa" opacity="0.78" />
             <circle r="16" fill={domain.color} opacity="0.13" />
             <text y="46" textAnchor="middle" fill="#202820" opacity="0.72" fontSize="10" fontWeight="700">
