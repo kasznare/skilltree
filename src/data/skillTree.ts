@@ -28,54 +28,117 @@ export type SkillAspectId =
   | 'athletic-practice'
   | 'recovery-posture'
   | 'physical-confidence'
+  | 'mobility-flexibility'
+  | 'strength-power'
+  | 'balance-agility'
+  | 'outdoor-movement'
+  | 'body-composition-literacy'
+  | 'competitive-play'
+  | 'movement-teaching'
   | 'sleep-recovery'
   | 'food-nutrition'
   | 'hygiene-grooming'
   | 'body-literacy'
   | 'emotional-regulation'
   | 'health-advocacy'
+  | 'dental-skin-care'
+  | 'illness-management'
+  | 'medication-safety'
+  | 'stress-recovery'
+  | 'mental-health-literacy'
+  | 'grooming-presentation'
+  | 'healthcare-navigation'
   | 'listening-attention'
   | 'spoken-expression'
   | 'reading-comprehension'
   | 'writing-composition'
   | 'research-media'
   | 'discussion-rhetoric'
+  | 'vocabulary-concepts'
+  | 'storytelling-narrative'
+  | 'note-taking-study'
+  | 'presentation-speaking'
+  | 'negotiation-asking'
+  | 'multilingual-cultural-language'
+  | 'digital-communication'
   | 'number-sense'
   | 'spatial-systems'
   | 'scientific-inquiry'
   | 'planning-executive'
   | 'money-data'
   | 'logic-tradeoffs'
+  | 'memory-learning-strategy'
+  | 'algebraic-thinking'
+  | 'geometry-measurement'
+  | 'computational-thinking'
+  | 'decision-science'
+  | 'ethics-civics-reasoning'
+  | 'project-analysis'
   | 'belonging-attachment'
   | 'empathy-perspective'
   | 'friendship-belonging'
   | 'conflict-repair'
   | 'team-leadership'
   | 'boundaries-intimacy'
+  | 'self-awareness'
+  | 'emotion-expression'
+  | 'family-relationships'
+  | 'peer-pressure-judgment'
+  | 'romantic-respect'
+  | 'mentoring-receiving'
+  | 'community-participation'
   | 'self-feeding-cooking'
   | 'home-chores'
   | 'organization-systems'
   | 'tools-repair'
   | 'money-work'
   | 'transport-logistics'
+  | 'clothing-laundry'
+  | 'room-systems'
+  | 'shopping-consumer-skills'
+  | 'time-calendar'
+  | 'basic-technology'
+  | 'work-service-habits'
+  | 'civic-legal-basics'
   | 'body-boundaries'
   | 'traffic-water-fire'
   | 'digital-privacy'
   | 'substance-risk'
   | 'sexual-health-consent'
   | 'emergency-readiness'
+  | 'hazard-scanning'
+  | 'personal-security'
+  | 'online-manipulation'
+  | 'medication-poison-safety'
+  | 'violence-deescalation'
+  | 'mental-health-crisis'
+  | 'travel-safety'
   | 'sensory-play'
   | 'visual-design'
   | 'music-rhythm'
   | 'building-making'
   | 'performance-story'
   | 'creative-practice'
+  | 'creative-observation'
+  | 'craft-technique'
+  | 'improvisation-play'
+  | 'digital-creation'
+  | 'critique-feedback'
+  | 'portfolio-finished-work'
+  | 'cultural-appreciation'
   | 'patience-attention'
   | 'truth-accountability'
   | 'responsibility-initiative'
   | 'courage-resilience'
   | 'service-citizenship'
   | 'identity-self-respect'
+  | 'self-awareness-values'
+  | 'gratitude-contentment'
+  | 'humility-teachability'
+  | 'discipline-habits'
+  | 'justice-fairness'
+  | 'leadership-stewardship'
+  | 'purpose-goals'
 
 export type Domain = {
   id: DomainId
@@ -803,6 +866,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'athletic-practice', title: 'Athletic practice', practice: 'sport, dance, game, or training patterns', standard: 'coachability and repeated practice', proof: 'visible skill improvement', tags: ['sport', 'practice'] },
     { id: 'recovery-posture', title: 'Recovery and posture', practice: 'warmups, posture, sleep, and recovery habits', standard: 'body maintenance', proof: 'fewer avoidable aches and safer mechanics', tags: ['posture', 'recovery'] },
     { id: 'physical-confidence', title: 'Physical confidence', practice: 'safe challenge and physical self-trust', standard: 'calm risk judgment', proof: 'confident movement without recklessness', tags: ['confidence', 'risk'] },
+    { id: 'mobility-flexibility', title: 'Mobility and flexibility', practice: 'range of motion, stretching, and joint control', standard: 'supple movement', proof: 'moves freely without forcing', tags: ['mobility', 'flexibility'] },
+    { id: 'strength-power', title: 'Strength and power', practice: 'age-appropriate strength, carrying, jumping, and resistance', standard: 'usable strength', proof: 'stronger action with safer form', tags: ['strength', 'power'] },
+    { id: 'balance-agility', title: 'Balance and agility', practice: 'quick feet, balance changes, dodging, and landing', standard: 'adaptive movement', proof: 'recovers position without panic', tags: ['balance', 'agility'] },
+    { id: 'outdoor-movement', title: 'Outdoor movement', practice: 'terrain, weather, parks, trails, and outdoor games', standard: 'outdoor body judgment', proof: 'adjusts movement to the environment', tags: ['outdoors', 'terrain'] },
+    { id: 'body-composition-literacy', title: 'Body composition literacy', practice: 'healthy growth, muscle, fat, appetite, and body respect', standard: 'body-neutral understanding', proof: 'talks about bodies without shame', tags: ['growth', 'body respect'], crossPrerequisites: [{ domain: 'care', aspectId: 'body-literacy' }] },
+    { id: 'competitive-play', title: 'Competitive play', practice: 'winning, losing, rules, effort, and sportsmanship', standard: 'clean competition', proof: 'competes hard without contempt', tags: ['competition', 'sportsmanship'], crossPrerequisites: [{ domain: 'social', aspectId: 'team-leadership' }] },
+    { id: 'movement-teaching', title: 'Movement teaching', practice: 'explaining, demonstrating, spotting, and coaching movement', standard: 'shared physical skill', proof: 'helps someone else move better', tags: ['coaching', 'teaching'], crossPrerequisites: [{ domain: 'language', aspectId: 'spoken-expression' }] },
   ],
   care: [
     { id: 'sleep-recovery', title: 'Sleep and recovery', practice: 'sleep rhythms and rest cues', standard: 'restorative routine', proof: 'better mood and energy', tags: ['sleep', 'recovery'] },
@@ -811,6 +881,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'body-literacy', title: 'Body literacy', practice: 'naming body signals, puberty, pain, and health questions', standard: 'accurate body awareness', proof: 'clear, shame-free questions', tags: ['body', 'puberty'] },
     { id: 'emotional-regulation', title: 'Emotional regulation', practice: 'calming, naming feelings, and recovery', standard: 'self-regulation with support', proof: 'faster repair after stress', tags: ['emotion', 'regulation'] },
     { id: 'health-advocacy', title: 'Health advocacy', practice: 'appointments, symptoms, privacy, and trusted adult help', standard: 'appropriate help-seeking', proof: 'timely care and honest reporting', tags: ['health', 'advocacy'] },
+    { id: 'dental-skin-care', title: 'Dental and skin care', practice: 'teeth, skin, hair, nails, sunscreen, and acne care', standard: 'preventive grooming', proof: 'small care routines prevent bigger problems', tags: ['dental', 'skin'] },
+    { id: 'illness-management', title: 'Illness management', practice: 'symptoms, rest, fever, hydration, and recovery choices', standard: 'sensible sick-day care', proof: 'responds to illness without hiding or exaggerating', tags: ['illness', 'recovery'] },
+    { id: 'medication-safety', title: 'Medication safety', practice: 'labels, dosage, storage, allergies, and asking adults', standard: 'medicine respect', proof: 'medicine is handled only in safe ways', tags: ['medicine', 'dosage'], crossPrerequisites: [{ domain: 'safety', aspectId: 'body-boundaries' }] },
+    { id: 'stress-recovery', title: 'Stress and recovery', practice: 'stress signs, downshifting, breaks, and recovery plans', standard: 'stress stewardship', proof: 'recovers before stress becomes harm', tags: ['stress', 'recovery'], crossPrerequisites: [{ domain: 'character', aspectId: 'courage-resilience' }] },
+    { id: 'mental-health-literacy', title: 'Mental health literacy', practice: 'mood, anxiety, depression signs, trusted help, and stigma-free words', standard: 'mental health awareness', proof: 'asks for help before isolation deepens', tags: ['mental health', 'help-seeking'], crossPrerequisites: [{ domain: 'social', aspectId: 'emotion-expression' }] },
+    { id: 'grooming-presentation', title: 'Grooming and presentation', practice: 'clean clothes, scent, hair, posture, and context-aware presentation', standard: 'respectful presentation', proof: 'shows up cared-for without vanity', tags: ['grooming', 'presentation'] },
+    { id: 'healthcare-navigation', title: 'Healthcare navigation', practice: 'appointments, insurance basics, forms, questions, and follow-up', standard: 'health system readiness', proof: 'can participate in his own care', tags: ['healthcare', 'appointments'], crossPrerequisites: [{ domain: 'reasoning', aspectId: 'planning-executive' }] },
   ],
   language: [
     { id: 'listening-attention', title: 'Listening and attention', practice: 'listening, following, and remembering', standard: 'sustained attention', proof: 'accurate responses and follow-through', tags: ['listening', 'attention'] },
@@ -819,6 +896,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'writing-composition', title: 'Writing composition', practice: 'sentences, paragraphs, notes, and longer writing', standard: 'organized writing', proof: 'clear written ideas', tags: ['writing', 'composition'] },
     { id: 'research-media', title: 'Research and media judgment', practice: 'sources, search, evidence, and media checks', standard: 'source judgment', proof: 'claims backed by evidence', tags: ['research', 'media'] },
     { id: 'discussion-rhetoric', title: 'Discussion and rhetoric', practice: 'conversation, disagreement, presentation, and persuasion', standard: 'respectful argument', proof: 'reasons without insults', tags: ['discussion', 'debate'] },
+    { id: 'vocabulary-concepts', title: 'Vocabulary and concepts', practice: 'precise words, categories, definitions, and abstract ideas', standard: 'concept clarity', proof: 'uses better words for finer distinctions', tags: ['vocabulary', 'concepts'] },
+    { id: 'storytelling-narrative', title: 'Storytelling and narrative', practice: 'sequence, character, cause, memory, and meaning', standard: 'narrative sense', proof: 'stories make events understandable', tags: ['storytelling', 'narrative'] },
+    { id: 'note-taking-study', title: 'Note-taking and study', practice: 'notes, summaries, study questions, and review cycles', standard: 'study literacy', proof: 'learning is captured and revisited', tags: ['notes', 'study'], crossPrerequisites: [{ domain: 'reasoning', aspectId: 'memory-learning-strategy' }] },
+    { id: 'presentation-speaking', title: 'Presentation speaking', practice: 'voice, structure, audience, timing, and presence', standard: 'public clarity', proof: 'can be heard and followed', tags: ['presentation', 'public speaking'], crossPrerequisites: [{ domain: 'creativity', aspectId: 'performance-story' }] },
+    { id: 'negotiation-asking', title: 'Negotiation and asking', practice: 'requests, tradeoffs, refusal, bargaining, and respectful persistence', standard: 'clear asks', proof: 'advocates without manipulation', tags: ['negotiation', 'asking'], crossPrerequisites: [{ domain: 'social', aspectId: 'conflict-repair' }] },
+    { id: 'multilingual-cultural-language', title: 'Multilingual and cultural language', practice: 'language exposure, translation, code-switching, and cultural context', standard: 'language humility', proof: 'communicates across difference with respect', tags: ['multilingual', 'culture'] },
+    { id: 'digital-communication', title: 'Digital communication', practice: 'messages, email, tone, timing, and durable records', standard: 'careful digital words', proof: 'messages are clear, kind, and safe', tags: ['digital', 'communication'], crossPrerequisites: [{ domain: 'safety', aspectId: 'digital-privacy' }] },
   ],
   reasoning: [
     { id: 'number-sense', title: 'Number sense', practice: 'quantity, operations, and practical math', standard: 'accurate calculation', proof: 'math used in real tasks', tags: ['math', 'number'] },
@@ -827,6 +911,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'planning-executive', title: 'Planning and executive function', practice: 'planning, sequencing, memory, and follow-through', standard: 'task management', proof: 'tasks completed with fewer rescues', tags: ['planning', 'executive'] },
     { id: 'money-data', title: 'Money and data', practice: 'money, data, measurement, budgets, and tradeoffs', standard: 'practical numeracy', proof: 'numbers guide choices', tags: ['money', 'data'] },
     { id: 'logic-tradeoffs', title: 'Logic and tradeoffs', practice: 'logic, consequences, alternatives, and decisions', standard: 'reasoned judgment', proof: 'choices explained before action', tags: ['logic', 'judgment'] },
+    { id: 'memory-learning-strategy', title: 'Memory and learning strategy', practice: 'recall, spaced practice, retrieval, and study experiments', standard: 'learning strategy', proof: 'remembers more because practice is intentional', tags: ['memory', 'learning'] },
+    { id: 'algebraic-thinking', title: 'Algebraic thinking', practice: 'unknowns, equations, functions, ratios, and symbolic patterns', standard: 'abstract number reasoning', proof: 'uses symbols to solve real problems', tags: ['algebra', 'patterns'] },
+    { id: 'geometry-measurement', title: 'Geometry and measurement', practice: 'shape, area, scale, angles, maps, and measurement tools', standard: 'measured space reasoning', proof: 'space and quantity estimates improve', tags: ['geometry', 'measurement'] },
+    { id: 'computational-thinking', title: 'Computational thinking', practice: 'algorithms, decomposition, debugging, and automation logic', standard: 'stepwise systems thinking', proof: 'breaks complex tasks into workable steps', tags: ['coding', 'algorithms'], crossPrerequisites: [{ domain: 'practical', aspectId: 'basic-technology' }] },
+    { id: 'decision-science', title: 'Decision science', practice: 'probability, bias, risk, expected value, and scenario thinking', standard: 'better decisions under uncertainty', proof: 'names odds and tradeoffs before choosing', tags: ['decisions', 'probability'], crossPrerequisites: [{ domain: 'safety', aspectId: 'hazard-scanning' }] },
+    { id: 'ethics-civics-reasoning', title: 'Ethics and civic reasoning', practice: 'rights, duties, fairness, institutions, and public consequences', standard: 'civic judgment', proof: 'connects choices to people beyond himself', tags: ['ethics', 'civics'], crossPrerequisites: [{ domain: 'character', aspectId: 'justice-fairness' }] },
+    { id: 'project-analysis', title: 'Project analysis', practice: 'scope, constraints, progress, failure points, and retrospectives', standard: 'project thinking', proof: 'plans improve after review', tags: ['projects', 'analysis'], crossPrerequisites: [{ domain: 'practical', aspectId: 'time-calendar' }] },
   ],
   social: [
     { id: 'belonging-attachment', title: 'Belonging and attachment', practice: 'trust, connection, and secure belonging', standard: 'safe connection', proof: 'seeks and gives support appropriately', tags: ['belonging', 'attachment'] },
@@ -835,6 +926,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'conflict-repair', title: 'Conflict and repair', practice: 'conflict words, apologies, negotiation, and repair', standard: 'repair skill', proof: 'conflict resolves with less harm', tags: ['conflict', 'repair'] },
     { id: 'team-leadership', title: 'Teamwork and leadership', practice: 'teams, roles, service, and calm leadership', standard: 'shared contribution', proof: 'helps groups work better', tags: ['teamwork', 'leadership'] },
     { id: 'boundaries-intimacy', title: 'Boundaries and intimacy', practice: 'privacy, respect, attraction, and relational boundaries', standard: 'respectful boundaries', proof: 'closeness stays dignified and mutual', tags: ['boundaries', 'respect'] },
+    { id: 'self-awareness', title: 'Self-awareness', practice: 'temperament, needs, strengths, limits, and inner signals', standard: 'honest self-knowledge', proof: 'names what is happening inside without excuses', tags: ['self-awareness', 'identity'] },
+    { id: 'emotion-expression', title: 'Emotion expression', practice: 'feeling words, tone, timing, and safe disclosure', standard: 'clean emotional expression', proof: 'feelings become information instead of explosions', tags: ['emotion', 'expression'] },
+    { id: 'family-relationships', title: 'Family relationships', practice: 'respect, shared work, repair, privacy, and interdependence at home', standard: 'family contribution', proof: 'home relationships carry more trust', tags: ['family', 'home'] },
+    { id: 'peer-pressure-judgment', title: 'Peer pressure judgment', practice: 'status pressure, teasing, dares, loyalty, and refusal', standard: 'peer independence', proof: 'belongs without surrendering judgment', tags: ['peer pressure', 'judgment'], crossPrerequisites: [{ domain: 'safety', aspectId: 'substance-risk' }] },
+    { id: 'romantic-respect', title: 'Romantic respect', practice: 'crushes, dating, attraction, rejection, and mutual dignity', standard: 'respectful romantic conduct', proof: 'interest and rejection are handled with dignity', tags: ['romance', 'respect'], crossPrerequisites: [{ domain: 'safety', aspectId: 'sexual-health-consent' }] },
+    { id: 'mentoring-receiving', title: 'Receiving mentoring', practice: 'asking older guides, hearing correction, and using advice', standard: 'teachable relationships', proof: 'guidance turns into changed behavior', tags: ['mentoring', 'advice'] },
+    { id: 'community-participation', title: 'Community participation', practice: 'neighbors, clubs, faith or civic spaces, volunteering, and belonging', standard: 'community membership', proof: 'shows up beyond the household', tags: ['community', 'participation'], crossPrerequisites: [{ domain: 'character', aspectId: 'service-citizenship' }] },
   ],
   practical: [
     { id: 'self-feeding-cooking', title: 'Food work and cooking', practice: 'feeding, cooking, kitchen cleanup, and food safety', standard: 'useful food competence', proof: 'safe food help or meals', tags: ['cooking', 'food'] },
@@ -843,6 +941,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'tools-repair', title: 'Tools and repair', practice: 'safe tools, maintenance, fixing, and making', standard: 'tool respect', proof: 'repairs attempted safely', tags: ['tools', 'repair'] },
     { id: 'money-work', title: 'Money and work habits', practice: 'earning, saving, spending, work ethic, and value', standard: 'resource responsibility', proof: 'money and effort choices improve', tags: ['money', 'work'] },
     { id: 'transport-logistics', title: 'Transport and logistics', practice: 'routes, packing, timing, transit, and local navigation', standard: 'movement through the world', proof: 'arrives prepared and on time', tags: ['transport', 'logistics'] },
+    { id: 'clothing-laundry', title: 'Clothing and laundry', practice: 'outfits, weather, laundry, repairs, and clothes storage', standard: 'clothing independence', proof: 'clothes are clean, fitting, and ready', tags: ['clothing', 'laundry'] },
+    { id: 'room-systems', title: 'Room systems', practice: 'sleep space, desk, storage, surfaces, and reset routines', standard: 'usable personal space', proof: 'his room supports rest and work', tags: ['room', 'systems'] },
+    { id: 'shopping-consumer-skills', title: 'Shopping and consumer skills', practice: 'lists, prices, quality, advertising, needs, and returns', standard: 'consumer judgment', proof: 'buys thoughtfully instead of impulsively', tags: ['shopping', 'consumer'], crossPrerequisites: [{ domain: 'reasoning', aspectId: 'money-data' }] },
+    { id: 'time-calendar', title: 'Time and calendar', practice: 'deadlines, alarms, calendars, travel time, and schedule tradeoffs', standard: 'time ownership', proof: 'arrives prepared without constant rescue', tags: ['time', 'calendar'], crossPrerequisites: [{ domain: 'reasoning', aspectId: 'planning-executive' }] },
+    { id: 'basic-technology', title: 'Basic technology', practice: 'devices, files, accounts, troubleshooting, and useful software', standard: 'tool-like technology use', proof: 'technology solves tasks instead of consuming attention', tags: ['technology', 'devices'], crossPrerequisites: [{ domain: 'safety', aspectId: 'digital-privacy' }] },
+    { id: 'work-service-habits', title: 'Work and service habits', practice: 'showing up, following standards, serving others, and finishing shifts', standard: 'dependable work conduct', proof: 'others trust his contribution', tags: ['work', 'service'], crossPrerequisites: [{ domain: 'character', aspectId: 'responsibility-initiative' }] },
+    { id: 'civic-legal-basics', title: 'Civic and legal basics', practice: 'rules, forms, identification, public services, and basic rights', standard: 'adult paperwork readiness', proof: 'handles official tasks with help when needed', tags: ['civic', 'legal'], crossPrerequisites: [{ domain: 'character', aspectId: 'service-citizenship' }] },
   ],
   safety: [
     { id: 'body-boundaries', title: 'Body boundaries', practice: 'body privacy, consent, trusted adults, and refusal words', standard: 'body autonomy', proof: 'unsafe secrecy is reported', tags: ['boundaries', 'consent'] },
@@ -851,6 +956,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'substance-risk', title: 'Substance and risk pressure', practice: 'substance refusal, dares, manipulation, and unsafe pressure', standard: 'pressure resistance', proof: 'risk is named before it escalates', tags: ['substances', 'pressure'] },
     { id: 'sexual-health-consent', title: 'Sexual health and consent', practice: 'puberty, attraction, consent, contraception basics, and dignity', standard: 'age-appropriate sexual health judgment', proof: 'questions go to trusted adults and reliable sources', tags: ['sexual health', 'consent'] },
     { id: 'emergency-readiness', title: 'Emergency readiness', practice: 'first aid, emergency calls, crisis plans, and calm action', standard: 'emergency response', proof: 'gets help quickly and accurately', tags: ['first aid', 'emergency'] },
+    { id: 'hazard-scanning', title: 'Hazard scanning', practice: 'noticing people, places, exits, tools, weather, and changing conditions', standard: 'calm situational awareness', proof: 'spots risk early without paranoia', tags: ['hazards', 'awareness'] },
+    { id: 'personal-security', title: 'Personal security', practice: 'locks, belongings, identity, passwords, money, and personal information', standard: 'personal protection', proof: 'keeps valuables and identity harder to exploit', tags: ['security', 'identity'] },
+    { id: 'online-manipulation', title: 'Online manipulation', practice: 'ads, algorithms, scams, grooming, pressure, and influencer tactics', standard: 'digital skepticism', proof: 'pauses before being pulled by online pressure', tags: ['online', 'manipulation'], crossPrerequisites: [{ domain: 'language', aspectId: 'research-media' }] },
+    { id: 'medication-poison-safety', title: 'Medication and poison safety', practice: 'poisons, chemicals, medications, dosage, labels, and emergency steps', standard: 'substance handling safety', proof: 'dangerous substances stay controlled', tags: ['poison', 'medicine'], crossPrerequisites: [{ domain: 'care', aspectId: 'medication-safety' }] },
+    { id: 'violence-deescalation', title: 'Violence de-escalation', practice: 'exits, witnesses, voice, distance, help, and nonviolent conflict survival', standard: 'harm reduction', proof: 'avoids making dangerous moments worse', tags: ['violence', 'de-escalation'], crossPrerequisites: [{ domain: 'social', aspectId: 'conflict-repair' }] },
+    { id: 'mental-health-crisis', title: 'Mental health crisis safety', practice: 'self-harm signals, trusted adults, emergency help, and staying with someone at risk', standard: 'crisis help-seeking', proof: 'serious warning signs are escalated', tags: ['crisis', 'mental health'], crossPrerequisites: [{ domain: 'care', aspectId: 'mental-health-literacy' }] },
+    { id: 'travel-safety', title: 'Travel safety', practice: 'routes, check-ins, rides, transit, unfamiliar places, and backup plans', standard: 'safe mobility', proof: 'travel plans include communication and contingencies', tags: ['travel', 'transit'], crossPrerequisites: [{ domain: 'practical', aspectId: 'transport-logistics' }] },
   ],
   creativity: [
     { id: 'sensory-play', title: 'Sensory play and imagination', practice: 'play, imagination, texture, rhythm, and role', standard: 'open-ended exploration', proof: 'ideas become visible through play', tags: ['play', 'imagination'] },
@@ -859,6 +971,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'building-making', title: 'Building and making', practice: 'materials, craft, prototypes, and construction', standard: 'made-object thinking', proof: 'objects work better after revision', tags: ['building', 'making'] },
     { id: 'performance-story', title: 'Performance and story', practice: 'story, voice, performance, audience, and presence', standard: 'expressive courage', proof: 'shares work with intention', tags: ['story', 'performance'] },
     { id: 'creative-practice', title: 'Creative practice', practice: 'taste, influences, revision, habits, and finished work', standard: 'creative discipline', proof: 'work improves through cycles', tags: ['practice', 'revision'] },
+    { id: 'creative-observation', title: 'Creative observation', practice: 'noticing shape, sound, gesture, mood, detail, and pattern', standard: 'attentive perception', proof: 'work contains things actually observed', tags: ['observation', 'attention'] },
+    { id: 'craft-technique', title: 'Craft technique', practice: 'materials, drills, methods, precision, and tool fluency', standard: 'technical craft', proof: 'skill improves through deliberate technique', tags: ['craft', 'technique'] },
+    { id: 'improvisation-play', title: 'Improvisation and play', practice: 'spontaneous ideas, constraints, humor, variation, and low-stakes attempts', standard: 'flexible imagination', proof: 'can make something from almost nothing', tags: ['improvisation', 'play'] },
+    { id: 'digital-creation', title: 'Digital creation', practice: 'photos, audio, video, code, layout, and responsible publishing', standard: 'digital making', proof: 'screens become tools for creation', tags: ['digital', 'creation'], crossPrerequisites: [{ domain: 'practical', aspectId: 'basic-technology' }] },
+    { id: 'critique-feedback', title: 'Critique and feedback', practice: 'giving, receiving, sorting, and applying creative feedback', standard: 'useful critique', proof: 'feedback improves the work without crushing the maker', tags: ['critique', 'feedback'], crossPrerequisites: [{ domain: 'social', aspectId: 'empathy-perspective' }] },
+    { id: 'portfolio-finished-work', title: 'Portfolio and finished work', practice: 'selection, finishing, documenting, presenting, and archiving work', standard: 'finished creative output', proof: 'work can be shown and explained', tags: ['portfolio', 'finished work'], crossPrerequisites: [{ domain: 'character', aspectId: 'discipline-habits' }] },
+    { id: 'cultural-appreciation', title: 'Cultural appreciation', practice: 'traditions, influences, attribution, taste, and respectful borrowing', standard: 'cultural respect', proof: 'names sources and learns before copying', tags: ['culture', 'appreciation'], crossPrerequisites: [{ domain: 'social', aspectId: 'community-participation' }] },
   ],
   character: [
     { id: 'patience-attention', title: 'Patience and attention', practice: 'waiting, focus, frustration tolerance, and persistence', standard: 'steady attention', proof: 'stays with hard things longer', tags: ['patience', 'attention'] },
@@ -867,6 +986,13 @@ export const skillExpansionAspects: Record<DomainId, SkillExpansionAspect[]> = {
     { id: 'courage-resilience', title: 'Courage and resilience', practice: 'fear, setbacks, hard attempts, and recovery', standard: 'brave persistence', proof: 'tries again after difficulty', tags: ['courage', 'resilience'] },
     { id: 'service-citizenship', title: 'Service and citizenship', practice: 'helping, community, fairness, and contribution', standard: 'prosocial contribution', proof: 'strength serves others', tags: ['service', 'citizenship'] },
     { id: 'identity-self-respect', title: 'Identity and self-respect', practice: 'values, identity, humility, dignity, and self-respect', standard: 'grounded selfhood', proof: 'acts from values under pressure', tags: ['identity', 'self-respect'] },
+    { id: 'self-awareness-values', title: 'Self-awareness and values', practice: 'motives, values, conscience, strengths, and weaknesses', standard: 'inner honesty', proof: 'knows what kind of person he is practicing to become', tags: ['values', 'self-awareness'] },
+    { id: 'gratitude-contentment', title: 'Gratitude and contentment', practice: 'thankfulness, enoughness, receiving, generosity, and comparison resistance', standard: 'content strength', proof: 'can enjoy good things without entitlement', tags: ['gratitude', 'contentment'] },
+    { id: 'humility-teachability', title: 'Humility and teachability', practice: 'correction, listening, beginner status, and learning from others', standard: 'teachable pride', proof: 'improves without needing to be superior', tags: ['humility', 'teachable'] },
+    { id: 'discipline-habits', title: 'Discipline and habits', practice: 'daily reps, delayed reward, systems, and consistency', standard: 'habitual follow-through', proof: 'good actions happen without drama', tags: ['discipline', 'habits'], crossPrerequisites: [{ domain: 'reasoning', aspectId: 'planning-executive' }] },
+    { id: 'justice-fairness', title: 'Justice and fairness', practice: 'fairness, rights, accountability, mercy, and standing up for others', standard: 'moral courage', proof: 'fairness matters even when inconvenient', tags: ['justice', 'fairness'], crossPrerequisites: [{ domain: 'social', aspectId: 'empathy-perspective' }] },
+    { id: 'leadership-stewardship', title: 'Leadership and stewardship', practice: 'influence, responsibility, protection, delegation, and care for shared goods', standard: 'responsible influence', proof: 'power is used to serve the group', tags: ['leadership', 'stewardship'], crossPrerequisites: [{ domain: 'social', aspectId: 'team-leadership' }] },
+    { id: 'purpose-goals', title: 'Purpose and goals', practice: 'future vision, tradeoffs, commitments, and course correction', standard: 'directed life planning', proof: 'short-term choices connect to long-term aims', tags: ['purpose', 'goals'], crossPrerequisites: [{ domain: 'reasoning', aspectId: 'decision-science' }] },
   ],
 }
 
