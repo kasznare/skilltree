@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import type { Edge, Node, NodeProps } from '@xyflow/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -21,8 +21,10 @@ import {
   Activity,
   BadgeCheck,
   Brain,
+  CheckCircle2,
   ChevronRight,
   CircleDot,
+  ClipboardCheck,
   Compass,
   Filter,
   GitBranch,
@@ -30,14 +32,18 @@ import {
   HeartPulse,
   MessageCircle,
   Paintbrush,
+  Plus,
   Search,
   ShieldCheck,
   Sparkles,
+  UserRound,
+  Users,
   Wrench,
   X,
 } from 'lucide-react'
 import './App.css'
 import headerImage from './assets/skill-tree-header.png'
+import { domainGuides, stagePracticePrompts, type DomainGuide } from './data/domainGuides'
 import {
   domains,
   skills,
@@ -47,6 +53,7 @@ import {
   type SkillNode,
   type StageId,
 } from './data/skillTree'
+import { createProfile, loadProfiles, saveProfiles, type KidProfile } from './storage/profiles'
 
 type DomainFocus = DomainId | 'all'
 type StageFocus = StageId | 'all'
@@ -62,6 +69,8 @@ type SkillNodeData = {
   role: GraphRole
   dimmed: boolean
   compact: boolean
+  completed: boolean
+  ready: boolean
   unlockCount: number
 }
 
@@ -102,9 +111,19 @@ function SkillTreeApp() {
   const [focusedDomain, setFocusedDomain] = useState<DomainFocus>('all')
   const [focusedStage, setFocusedStage] = useState<StageFocus>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('path')
+  const [profiles, setProfiles] = useState<KidProfile[]>(loadProfiles)
+  const [activeProfileId, setActiveProfileId] = useState(() => loadProfiles()[0]?.id ?? 'default-child')
+  const [newProfileName, setNewProfileName] = useState('')
+  const [newProfileAge, setNewProfileAge] = useState<StageId>('infancy')
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<SkillNodeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const { fitView } = useReactFlow()
+
+  const activeProfile = (profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0] ?? loadProfiles()[0])!
+  const completedIds = useMemo(
+    () => new Set(activeProfile?.completedSkillIds ?? []),
+    [activeProfile?.completedSkillIds],
+  )
 
   const skillById = useMemo(() => new Map(skills.map((skill) => [skill.id, skill])), [])
 
@@ -135,6 +154,7 @@ function SkillTreeApp() {
 
   const selectedSkill = skillById.get(selectedId) ?? skillById.get(defaultSkillId) ?? skills[0]
   const selectedDomain = domainById.get(selectedSkill.domain) ?? domains[0]
+  const selectedGuide = domainGuides[selectedSkill.domain]
   const SelectedDomainIcon = domainIcons[selectedDomain.id]
   const selectedUnlocks = useMemo(() => unlockMap.get(selectedSkill.id) ?? [], [selectedSkill.id, unlockMap])
   const selectedPrerequisites = useMemo(
@@ -177,8 +197,24 @@ function SkillTreeApp() {
     [ancestorIds, descendantIds, selectedSkill.id],
   )
   const graphRoles = useMemo(() => buildGraphRoles(unlockMap), [unlockMap])
+  const selectedPrerequisiteCompleteCount = selectedSkill.prerequisites.filter((id) => completedIds.has(id)).length
+  const selectedComplete = completedIds.has(selectedSkill.id)
+  const completedCount = completedIds.size
+  const readyCount = skills.filter(
+    (skill) => !completedIds.has(skill.id) && skill.prerequisites.every((id) => completedIds.has(id)),
+  ).length
   const activeFocusCount =
     Number(Boolean(normalizedQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
+
+  useEffect(() => {
+    saveProfiles(profiles)
+  }, [profiles])
+
+  useEffect(() => {
+    if (!profiles.some((profile) => profile.id === activeProfileId)) {
+      setActiveProfileId(profiles[0]?.id ?? 'default-child')
+    }
+  }, [activeProfileId, profiles])
 
   useEffect(() => {
     if (normalizedQuery && matchedSkills.length > 0 && !matchedIds.has(selectedId)) {
@@ -243,6 +279,8 @@ function SkillTreeApp() {
             role: graphRoles.get(skill.id) ?? 'ordinary',
             dimmed,
             compact: viewMode === 'world',
+            completed: completedIds.has(skill.id),
+            ready: skill.prerequisites.every((id) => completedIds.has(id)),
             unlockCount: unlockMap.get(skill.id)?.length ?? 0,
           },
           selected: selectedSkill.id === skill.id,
@@ -289,6 +327,7 @@ function SkillTreeApp() {
             'skill-edge',
             sourceRelated && targetRelated ? 'skill-edge--lineage' : '',
             direct ? 'skill-edge--direct' : '',
+            completedIds.has(from.id) && completedIds.has(to.id) ? 'skill-edge--completed' : '',
             dimmed ? 'skill-edge--dimmed' : '',
           ]
             .filter(Boolean)
@@ -313,6 +352,7 @@ function SkillTreeApp() {
   }, [
     activeFocusCount,
     ancestorIds,
+    completedIds,
     descendantIds,
     directPrerequisiteIds,
     directUnlockIds,
@@ -362,7 +402,50 @@ function SkillTreeApp() {
     setViewMode('path')
   }
 
+  function updateActiveProfile(updater: (profile: KidProfile) => KidProfile) {
+    setProfiles((current) => current.map((profile) => (profile.id === activeProfile.id ? updater(profile) : profile)))
+  }
+
+  function toggleSelectedComplete() {
+    updateActiveProfile((profile) => {
+      const completed = new Set(profile.completedSkillIds)
+
+      if (completed.has(selectedSkill.id)) {
+        completed.delete(selectedSkill.id)
+      } else {
+        completed.add(selectedSkill.id)
+      }
+
+      return {
+        ...profile,
+        completedSkillIds: Array.from(completed),
+      }
+    })
+  }
+
+  function updateActiveProfileAge(ageBand: StageId) {
+    updateActiveProfile((profile) => ({
+      ...profile,
+      ageBand,
+    }))
+  }
+
+  function addProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const name = newProfileName.trim()
+
+    if (!name) {
+      return
+    }
+
+    const profile = createProfile(name, newProfileAge)
+    setProfiles((current) => [...current, profile])
+    setActiveProfileId(profile.id)
+    setNewProfileName('')
+  }
+
   const selectedRole = graphRoles.get(selectedSkill.id) ?? 'ordinary'
+  const selectedPracticePlan = buildPracticePlan(selectedSkill, selectedGuide, selectedPrerequisites)
 
   return (
     <div className="app-shell">
@@ -480,6 +563,75 @@ function SkillTreeApp() {
           <p className="result-count">
             {matchedSkills.length} search match{matchedSkills.length === 1 ? '' : 'es'} in {skills.length} skills
           </p>
+
+          <div className="profile-row" aria-label="Kid profiles">
+            <div className="profile-summary">
+              <Users aria-hidden="true" size={18} />
+              <span>
+                <strong>{activeProfile.name}</strong>
+                <em>
+                  {stageLabelById.get(activeProfile.ageBand)?.title} · {stageLabelById.get(activeProfile.ageBand)?.age}
+                </em>
+                {completedCount} complete · {readyCount} ready
+              </span>
+              <progress value={completedCount} max={skills.length} aria-label={`${activeProfile.name} progress`} />
+              <label className="profile-age-select">
+                <span className="sr-only">Active child age band</span>
+                <select
+                  value={activeProfile.ageBand}
+                  onChange={(event) => updateActiveProfileAge(event.target.value as StageId)}
+                  aria-label="Active child age band"
+                >
+                  {stages.map((stage) => (
+                    <option key={stage.id} value={stage.id}>
+                      {stage.age} · {stage.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="profile-tabs">
+              {profiles.map((profile) => (
+                <button
+                  key={profile.id}
+                  type="button"
+                  aria-pressed={activeProfile.id === profile.id}
+                  onClick={() => setActiveProfileId(profile.id)}
+                >
+                  <UserRound aria-hidden="true" size={15} />
+                  <span>
+                    {profile.name}
+                    <small>{stageLabelById.get(profile.ageBand)?.age}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <form className="add-profile" onSubmit={addProfile}>
+              <input
+                value={newProfileName}
+                onChange={(event) => setNewProfileName(event.target.value)}
+                placeholder="Add child"
+                aria-label="New child name"
+              />
+              <select
+                value={newProfileAge}
+                onChange={(event) => setNewProfileAge(event.target.value as StageId)}
+                aria-label="New child age band"
+              >
+                {stages.map((stage) => (
+                  <option key={stage.id} value={stage.id}>
+                    {stage.age}
+                  </option>
+                ))}
+              </select>
+              <button type="submit">
+                <Plus aria-hidden="true" size={16} />
+                Add
+              </button>
+            </form>
+          </div>
         </section>
 
         <section className="tree-layout" aria-label="Skill tree">
@@ -508,7 +660,7 @@ function SkillTreeApp() {
                 nodeStrokeWidth={4}
                 nodeColor={(node) => {
                   const data = node.data as SkillNodeData
-                  return data.dimmed ? '#d7d0c3' : data.domain.color
+                  return data.completed ? '#2f6b4f' : data.dimmed ? '#d7d0c3' : data.domain.color
                 }}
               />
               <Panel position="top-left" className="map-panel">
@@ -550,6 +702,19 @@ function SkillTreeApp() {
             <h2>{selectedSkill.title}</h2>
             <p className="detail-summary">{selectedSkill.summary}</p>
 
+            <DomainIntroImage domain={selectedDomain} guide={selectedGuide} />
+
+            <button
+              className={['complete-button', selectedComplete ? 'complete-button--done' : '']
+                .filter(Boolean)
+                .join(' ')}
+              type="button"
+              onClick={toggleSelectedComplete}
+            >
+              <CheckCircle2 aria-hidden="true" size={18} />
+              {selectedComplete ? `Completed for ${activeProfile.name}` : `Mark complete for ${activeProfile.name}`}
+            </button>
+
             <dl className="detail-meta">
               <div>
                 <dt>Age</dt>
@@ -567,7 +732,28 @@ function SkillTreeApp() {
                 <dt>Unlocks</dt>
                 <dd>{selectedUnlocks.length}</dd>
               </div>
+              <div>
+                <dt>Prereqs</dt>
+                <dd>
+                  {selectedSkill.prerequisites.length === 0
+                    ? 'Root'
+                    : `${selectedPrerequisiteCompleteCount}/${selectedSkill.prerequisites.length}`}
+                </dd>
+              </div>
             </dl>
+
+            <div className="detail-section domain-atlas">
+              <h3>
+                <Compass aria-hidden="true" size={17} />
+                Domain map
+              </h3>
+              <div className="subdomain-cloud">
+                {selectedGuide.subdomains.map((subdomain) => (
+                  <span key={subdomain}>{subdomain}</span>
+                ))}
+              </div>
+              <p>{selectedGuide.growthArc[selectedSkill.stage] ?? selectedDomain.description}</p>
+            </div>
 
             <div className="detail-section">
               <h3>
@@ -579,6 +765,18 @@ function SkillTreeApp() {
                   <li key={outcome}>{outcome}</li>
                 ))}
               </ul>
+            </div>
+
+            <div className="detail-section practice-plan">
+              <h3>
+                <ClipboardCheck aria-hidden="true" size={17} />
+                Ways to build this
+              </h3>
+              <ol>
+                {selectedPracticePlan.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
             </div>
 
             <SkillLinks title="Before this" icon={GitBranch} skills={selectedPrerequisites} onSelect={setSelectedId} />
@@ -609,6 +807,8 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
         selected ? 'skill-map-node--selected' : '',
         data.dimmed ? 'skill-map-node--dimmed' : '',
         data.compact ? 'skill-map-node--compact' : '',
+        data.completed ? 'skill-map-node--completed' : '',
+        data.ready ? 'skill-map-node--ready' : '',
         data.relation ? `skill-map-node--${data.relation}` : '',
         `skill-map-node--role-${data.role}`,
       ]
@@ -618,7 +818,7 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
     >
       <Handle className="skill-handle" type="target" position={Position.Left} />
       <div className="node-orb" aria-hidden="true">
-        <Icon size={18} />
+        {data.completed ? <CheckCircle2 size={18} /> : <Icon size={18} />}
       </div>
       <div className="node-copy">
         <span className="node-kicker">
@@ -634,6 +834,57 @@ function SkillMapNode({ data, selected }: NodeProps<Node<SkillNodeData>>) {
         {data.unlockCount}
       </span>
       <Handle className="skill-handle" type="source" position={Position.Right} />
+    </div>
+  )
+}
+
+function DomainIntroImage({ domain, guide }: { domain: (typeof domains)[number]; guide: DomainGuide }) {
+  const Icon = domainIcons[domain.id]
+
+  return (
+    <div className="intro-card" style={{ '--domain-color': domain.color } as CSSProperties}>
+      <svg className="intro-art" viewBox="0 0 360 180" role="img" aria-label={`${domain.label} intro image`}>
+        <defs>
+          <linearGradient id={`intro-${domain.id}`} x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor={domain.color} stopOpacity="0.72" />
+            <stop offset="58%" stopColor={domain.color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#fffefa" stopOpacity="0.95" />
+          </linearGradient>
+        </defs>
+        <rect width="360" height="180" rx="18" fill={`url(#intro-${domain.id})`} />
+        <path
+          d="M36 130 C78 82, 106 112, 145 64 S228 78, 257 42 S316 40, 332 24"
+          fill="none"
+          stroke="#fffefa"
+          strokeOpacity="0.82"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M36 138 C88 116, 130 142, 178 104 S260 132, 326 82"
+          fill="none"
+          stroke={domain.color}
+          strokeOpacity="0.42"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray="6 10"
+        />
+        {guide.imageMotifs.map((motif, index) => (
+          <g key={motif} transform={`translate(${70 + index * 92} ${76 + (index % 2) * 28})`}>
+            <circle r="27" fill="#fffefa" opacity="0.78" />
+            <circle r="16" fill={domain.color} opacity="0.13" />
+            <text y="46" textAnchor="middle" fill="#202820" opacity="0.72" fontSize="10" fontWeight="700">
+              {motif}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="intro-caption">
+        <span>
+          <Icon aria-hidden="true" size={16} />
+          {guide.imageTone}
+        </span>
+      </div>
     </div>
   )
 }
@@ -817,6 +1068,38 @@ function buildGraphRoles(unlockMap: Map<string, SkillNode[]>) {
   }
 
   return roleMap
+}
+
+function buildPracticePlan(skill: SkillNode, guide: DomainGuide, prerequisites: SkillNode[]) {
+  const stagePrompts = stagePracticePrompts[skill.stage]
+  const materials = guide.materials.slice(0, 3).join(', ')
+  const observation = guide.observe.slice(0, 3).join(', ')
+  const firstOutcome = skill.outcomes[0]?.toLowerCase() ?? 'the target behavior'
+  const prerequisiteText =
+    prerequisites.length > 0
+      ? `Start from ${formatSkillList(prerequisites)}; those are the roots this skill expects.`
+      : `${stagePrompts[0]}.`
+
+  return [
+    prerequisiteText,
+    `${guide.practiceLoop[0]} around "${skill.title.toLowerCase()}" using ${materials}.`,
+    `${guide.practiceLoop[1]} so he can practice ${firstOutcome}.`,
+    `Watch for ${observation}; mark complete when the outcomes are showing up in ordinary life.`,
+  ]
+}
+
+function formatSkillList(list: SkillNode[]) {
+  const titles = list.slice(0, 3).map((skill) => skill.title.toLowerCase())
+
+  if (titles.length <= 1) {
+    return titles[0] ?? 'the previous skill'
+  }
+
+  if (titles.length === 2) {
+    return `${titles[0]} and ${titles[1]}`
+  }
+
+  return `${titles.slice(0, -1).join(', ')}, and ${titles[titles.length - 1]}`
 }
 
 async function getLayoutedGraph(

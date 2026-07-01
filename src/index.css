@@ -38,14 +38,16 @@ body {
 
 body,
 button,
-input {
+input,
+select {
   font-size: 16px;
   line-height: 1.45;
   letter-spacing: 0;
 }
 
 button,
-input {
+input,
+select {
   font-family: inherit;
 }
 
