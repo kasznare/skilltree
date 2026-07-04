@@ -92,10 +92,17 @@ type AchievementStep = {
   cue: string
 }
 
+type AchievementDrill = {
+  title: string
+  action: string
+  proof: string
+}
+
 type AchievementPlan = {
   materials: string[]
   observations: string[]
   steps: AchievementStep[]
+  drills: AchievementDrill[]
   completionRule: string
   easier: string
   harder: string
@@ -1200,7 +1207,7 @@ function SkillTreeApp() {
                 {ui.detail.waysToBuild}
               </h3>
 
-              <div className="achievement-brief">
+              <dl className="achievement-brief">
                 <div>
                   <dt>{ui.practicePlan.materialsLabel}</dt>
                   <dd>{selectedAchievementPlan.materials.join(', ')}</dd>
@@ -1209,7 +1216,7 @@ function SkillTreeApp() {
                   <dt>{ui.practicePlan.observeLabel}</dt>
                   <dd>{selectedAchievementPlan.observations.join(', ')}</dd>
                 </div>
-              </div>
+              </dl>
 
               <ol className="achievement-steps">
                 {selectedAchievementPlan.steps.map((step, index) => (
@@ -1221,12 +1228,22 @@ function SkillTreeApp() {
                 ))}
               </ol>
 
+              <div className="drill-list" aria-label={ui.practicePlan.drillsLabel}>
+                {selectedAchievementPlan.drills.map((drill) => (
+                  <article className="drill-card" key={`${selectedSkill.id}-${drill.title}`}>
+                    <strong>{drill.title}</strong>
+                    <p>{drill.action}</p>
+                    <span>{drill.proof}</span>
+                  </article>
+                ))}
+              </div>
+
               <div className="completion-rule">
                 <strong>{ui.practicePlan.completeWhenLabel}</strong>
                 <p>{selectedAchievementPlan.completionRule}</p>
               </div>
 
-              <div className="difficulty-ladder">
+              <dl className="difficulty-ladder">
                 <div>
                   <dt>{ui.practicePlan.easierLabel}</dt>
                   <dd>{selectedAchievementPlan.easier}</dd>
@@ -1235,7 +1252,7 @@ function SkillTreeApp() {
                   <dt>{ui.practicePlan.harderLabel}</dt>
                   <dd>{selectedAchievementPlan.harder}</dd>
                 </div>
-              </div>
+              </dl>
             </div>
 
             <SkillLinks
@@ -1858,9 +1875,24 @@ function buildAchievementPlan(
   const firstOutcome = skill.outcomes[0] ?? ui.detail.outcomes
   const secondOutcome = skill.outcomes[1] ?? firstOutcome
   const thirdOutcome = skill.outcomes[2] ?? secondOutcome
+  const firstCue = normalizeOutcomeTitle(firstOutcome, ui.locale)
+  const secondCue = normalizeOutcomeTitle(secondOutcome, ui.locale)
+  const thirdCue = normalizeOutcomeTitle(thirdOutcome, ui.locale)
   const skillTitle = skill.title.toLocaleLowerCase(ui.locale)
   const observation = observations.slice(0, 3).join(', ')
   const nextSkill = unlocks[0]?.title.toLocaleLowerCase(ui.locale) ?? thirdOutcome.toLocaleLowerCase(ui.locale)
+  const drills = skill.outcomes.map((outcome, index) => {
+    const material = materials[index % materials.length] ?? guide.materials[0]
+    const loop = guide.practiceLoop[index % guide.practiceLoop.length] ?? guide.practiceLoop[0]
+    const observe = observations[index % observations.length] ?? guide.observe[0]
+    const outcomeAction = normalizeOutcomeAction(outcome, ui.locale)
+
+    return {
+      title: ui.practicePlan.drillTitle(index + 1, shortenText(normalizeOutcomeTitle(outcome, ui.locale), 52)),
+      action: ui.practicePlan.drillAction(loop, material, outcomeAction, skillTitle),
+      proof: ui.practicePlan.drillProof(outcomeAction, observe),
+    }
+  })
   const prerequisiteText =
     prerequisites.length > 0
       ? ui.practicePlan.startFrom(formatSkillList(prerequisites, ui))
@@ -1881,25 +1913,46 @@ function buildAchievementPlan(
         cue: guide.growthArc[skill.stage] ?? guide.subdomains.slice(0, 3).join(', '),
       },
       {
-        title: ui.practicePlan.stepTitles.show,
-        body: ui.practicePlan.show(guide.practiceLoop[0], skillTitle, firstOutcome.toLocaleLowerCase(ui.locale)),
-        cue: firstOutcome,
+        title: ui.practicePlan.stepTitles.drill,
+        body: ui.practicePlan.runDrills(drills.length, skillTitle),
+        cue: firstCue,
       },
       {
-        title: ui.practicePlan.stepTitles.repeat,
-        body: ui.practicePlan.repeatFor(guide.practiceLoop[1], secondOutcome.toLocaleLowerCase(ui.locale)),
-        cue: secondOutcome,
+        title: ui.practicePlan.stepTitles.fade,
+        body: ui.practicePlan.fadeHelp(stagePrompts[1] ?? stagePrompts[0]),
+        cue: secondCue,
       },
       {
-        title: ui.practicePlan.stepTitles.stretch,
-        body: ui.practicePlan.stretch(guide.practiceLoop[2], nextSkill),
-        cue: thirdOutcome,
+        title: ui.practicePlan.stepTitles.finish,
+        body: ui.practicePlan.moveOn(nextSkill),
+        cue: thirdCue,
       },
     ],
-    completionRule: ui.practicePlan.completeRule(skill.outcomes.length, observation),
+    drills,
+    completionRule: ui.practicePlan.completeRule(drills.length, observation),
     easier: ui.practicePlan.makeEasier(stagePrompts[1] ?? stagePrompts[0]),
     harder: ui.practicePlan.makeHarder(nextSkill),
   }
+}
+
+function shortenText(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value
+  }
+
+  return `${value.slice(0, maxLength - 1).trim()}...`
+}
+
+function normalizeOutcomeAction(outcome: string, locale: string) {
+  const cleaned = outcome.replace(/^Observable proof:\s*/i, '').trim()
+
+  return cleaned.charAt(0).toLocaleLowerCase(locale) + cleaned.slice(1)
+}
+
+function normalizeOutcomeTitle(outcome: string, locale: string) {
+  const cleaned = outcome.replace(/^Observable proof:\s*/i, '').trim()
+
+  return cleaned.charAt(0).toLocaleUpperCase(locale) + cleaned.slice(1)
 }
 
 function formatSkillList(list: SkillNode[], ui: UiCopy) {

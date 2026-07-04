@@ -1274,6 +1274,40 @@
   margin-top: 2px;
 }
 
+.drill-list {
+  display: grid;
+  gap: 8px;
+}
+
+.drill-card {
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--domain-color, var(--accent)), transparent 68%);
+  border-left: 5px solid var(--domain-color, var(--accent));
+  border-radius: 8px;
+  background: #fffefa;
+}
+
+.drill-card strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.drill-card p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.drill-card span {
+  display: block;
+  padding-top: 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+
 .practice-plan li {
   position: relative;
   min-height: 46px;

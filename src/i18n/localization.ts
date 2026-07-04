@@ -126,19 +126,23 @@ export type UiCopy = {
     stepTitles: {
       ready: string
       setup: string
-      show: string
-      repeat: string
-      stretch: string
+      drill: string
+      fade: string
+      finish: string
     }
     materialsLabel: string
     observeLabel: string
+    drillsLabel: string
     completeWhenLabel: string
     easierLabel: string
     harderLabel: string
     setup: (prompt: string, materials: string) => string
-    show: (loop: string, skillTitle: string, outcome: string) => string
-    repeatFor: (loop: string, outcome: string) => string
-    stretch: (loop: string, next: string) => string
+    runDrills: (count: number, skillTitle: string) => string
+    fadeHelp: (prompt: string) => string
+    moveOn: (next: string) => string
+    drillTitle: (index: number, outcome: string) => string
+    drillAction: (loop: string, material: string, outcome: string, skillTitle: string) => string
+    drillProof: (outcome: string, observation: string) => string
     completeRule: (outcomeCount: number, observation: string) => string
     makeEasier: (prompt: string) => string
     makeHarder: (next: string) => string
@@ -319,21 +323,28 @@ const englishUi: UiCopy = {
     stepTitles: {
       ready: 'Confirm readiness',
       setup: 'Set up the rep',
-      show: 'Model the skill',
-      repeat: 'Run short reps',
-      stretch: 'Raise the challenge',
+      drill: 'Practice each outcome',
+      fade: 'Fade your help',
+      finish: 'Close the node',
     },
     materialsLabel: 'Use',
     observeLabel: 'Watch',
+    drillsLabel: 'Exact practice drills',
     completeWhenLabel: 'Mark complete when',
     easierLabel: 'Make easier',
     harderLabel: 'Make harder',
     setup: (prompt, materials) => `${prompt}. Put ${materials} within reach and choose one ordinary moment to practice.`,
-    show: (loop, skillTitle, outcome) => `${loop} for "${skillTitle}", then name the target: ${outcome}.`,
-    repeatFor: (loop, outcome) => `${loop}. Keep each attempt short enough that he can practice ${outcome} without turning it into a battle.`,
-    stretch: (loop, next) => `${loop}. When this feels easy, connect it to ${next}.`,
+    runDrills: (count, skillTitle) =>
+      `Run the ${count} drills below for "${skillTitle}". Do one clean attempt, pause, then repeat once with a tiny variation.`,
+    fadeHelp: (prompt) => `${prompt}. Move from showing, to one reminder, to waiting quietly before helping.`,
+    moveOn: (next) => `When the completion rule is met, mark this node complete and preview ${next}.`,
+    drillTitle: (index, outcome) => `Drill ${index}: ${outcome}`,
+    drillAction: (loop, material, outcome, skillTitle) =>
+      `${loop} using ${material}. Give one clear prompt for "${skillTitle}", let him try, then name the target: ${outcome}.`,
+    drillProof: (outcome, observation) =>
+      `Proof: he ${outcome} in ordinary life, with ${observation}, not only during the drill.`,
     completeRule: (outcomeCount, observation) =>
-      `All ${outcomeCount} outcomes show up on three ordinary occasions, with only age-appropriate reminders. Watch especially for ${observation}.`,
+      `All ${outcomeCount} drill proofs appear on three ordinary occasions, with only age-appropriate reminders. Watch especially for ${observation}.`,
     makeEasier: (prompt) => `${prompt}; reduce the task to one cue, one material, or one attempt.`,
     makeHarder: (next) => `Ask him to use the skill in a slightly noisier, longer, or more independent situation, then preview ${next}.`,
   },
@@ -434,21 +445,28 @@ const hungarianUi: UiCopy = {
     stepTitles: {
       ready: 'Készenlét ellenőrzése',
       setup: 'Gyakorlás előkészítése',
-      show: 'Mutasd meg a készséget',
-      repeat: 'Rövid ismétlések',
-      stretch: 'Nehezítés',
+      drill: 'Minden eredmény gyakorlása',
+      fade: 'Segítség visszavétele',
+      finish: 'Csomópont lezárása',
     },
     materialsLabel: 'Eszközök',
     observeLabel: 'Figyeld',
+    drillsLabel: 'Konkrét gyakorlások',
     completeWhenLabel: 'Akkor jelöld késznek',
     easierLabel: 'Könnyítés',
     harderLabel: 'Nehezítés',
     setup: (prompt, materials) => `${prompt}. Legyen kéznél: ${materials}, és válasszatok egy hétköznapi pillanatot a gyakorlásra.`,
-    show: (loop, skillTitle, outcome) => `${loop} a(z) "${skillTitle}" készségnél, majd nevezd meg a célt: ${outcome}.`,
-    repeatFor: (loop, outcome) => `${loop}. Legyen minden próbálkozás elég rövid ahhoz, hogy ezt gyakorolja: ${outcome}, vita nélkül.`,
-    stretch: (loop, next) => `${loop}. Amikor ez könnyűnek érződik, kapcsold ehhez: ${next}.`,
+    runDrills: (count, skillTitle) =>
+      `Futtasd az alábbi ${count} gyakorlatot a(z) "${skillTitle}" készséghez. Legyen egy tiszta próbálkozás, rövid szünet, majd egy apró variáció.`,
+    fadeHelp: (prompt) => `${prompt}. A segítség menjen így: megmutatás, egy emlékeztető, majd csendes várakozás segítség előtt.`,
+    moveOn: (next) => `Ha a teljesítési szabály teljesül, jelöld késznek ezt a csomópontot, és nézzetek rá erre: ${next}.`,
+    drillTitle: (index, outcome) => `${index}. gyakorlat: ${outcome}`,
+    drillAction: (loop, material, outcome, skillTitle) =>
+      `${loop} ezzel: ${material}. Adj egy tiszta jelzést a(z) "${skillTitle}" készséghez, hagyd próbálni, majd nevezd meg a célt: ${outcome}.`,
+    drillProof: (outcome, observation) =>
+      `Bizonyíték: ${outcome} hétköznapi helyzetben is, miközben ezt figyeled: ${observation}.`,
     completeRule: (outcomeCount, observation) =>
-      `Mind a ${outcomeCount} eredmény megjelenik három hétköznapi alkalommal, csak életkornak megfelelő emlékeztetéssel. Különösen ezt figyeld: ${observation}.`,
+      `Mind a ${outcomeCount} gyakorlat bizonyítéka megjelenik három hétköznapi alkalommal, csak életkornak megfelelő emlékeztetéssel. Különösen ezt figyeld: ${observation}.`,
     makeEasier: (prompt) => `${prompt}; szűkítsd le a feladatot egy jelre, egy eszközre vagy egy próbálkozásra.`,
     makeHarder: (next) => `Használja a készséget kicsit zajosabb, hosszabb vagy önállóbb helyzetben, majd készítsd elő ezt: ${next}.`,
   },

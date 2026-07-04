@@ -1130,7 +1130,7 @@ function buildExpandedSkills() {
           outcomes: [
             `Practices ${aspect.practice}`,
             `Uses ${aspect.standard} with ${theme.autonomy}`,
-            `Shows ${aspect.proof} through ${theme.evidence}`,
+            `Observable proof: ${aspect.proof} through ${theme.evidence}`,
           ],
           prerequisites: Array.from(prerequisites),
           tags: uniqueTags([domain.shortLabel.toLowerCase(), stage.title.toLowerCase(), ...theme.tags, ...aspect.tags]),
