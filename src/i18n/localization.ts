@@ -61,6 +61,23 @@ export type UiCopy = {
   domainFocusAria: string
   allDomains: string
   resultCount: (matches: number, shown: number, total: number) => string
+  graphControls: {
+    aria: string
+    less: string
+    more: string
+  }
+  results: {
+    aria: string
+    title: string
+    summary: (shown: number, total: number) => string
+    completed: string
+    ready: string
+    blocked: string
+  }
+  breadcrumbs: {
+    aria: string
+  }
+  historyBack: string
   kidProfilesAria: string
   defaultProfileName: string
   progressSummary: (completed: number, ready: number) => string
@@ -94,6 +111,14 @@ export type UiCopy = {
     tags: string
   }
   readyNode: string
+  readiness: {
+    completedTitle: string
+    completedCopy: string
+    readyTitle: string
+    readyCopy: string
+    blockedTitle: (count: number) => string
+    blockedCopy: string
+  }
   practicePlan: {
     startFrom: (skills: string) => string
     rootPrompt: (prompt: string) => string
@@ -208,6 +233,23 @@ const englishUi: UiCopy = {
     shown < matches
       ? `${matches} match current filters · showing ${shown} for speed · ${total} total`
       : `${matches} matching current filters from ${total} skills`,
+  graphControls: {
+    aria: 'Graph size',
+    less: 'Less graph',
+    more: 'More graph',
+  },
+  results: {
+    aria: 'Filtered skills',
+    title: 'Matches',
+    summary: (shown, total) => `${shown}/${total} listed`,
+    completed: 'Complete',
+    ready: 'Ready',
+    blocked: 'Blocked',
+  },
+  breadcrumbs: {
+    aria: 'Skill location',
+  },
+  historyBack: 'Back',
   kidProfilesAria: 'Kid profiles',
   defaultProfileName: 'First child',
   progressSummary: (completed, ready) => `${completed} complete · ${ready} ready`,
@@ -245,6 +287,14 @@ const englishUi: UiCopy = {
     tags: 'Tags',
   },
   readyNode: 'Ready',
+  readiness: {
+    completedTitle: 'Complete for this child',
+    completedCopy: 'This skill is already marked complete in the active profile.',
+    readyTitle: 'Ready to build',
+    readyCopy: 'All listed prerequisites are complete, so this skill can be practiced now.',
+    blockedTitle: (count) => `${count} prerequisite${count === 1 ? '' : 's'} still open`,
+    blockedCopy: 'Start with the linked prerequisite skills before marking this one complete.',
+  },
   practicePlan: {
     startFrom: (skills) => `Start from ${skills}; those are the roots this skill expects.`,
     rootPrompt: (prompt) => `${prompt}.`,
@@ -281,6 +331,23 @@ const hungarianUi: UiCopy = {
     shown < matches
       ? `${matches} illeszkedik a szűrőkre · ${shown} megjelenítve a sebességért · ${total} összesen`
       : `${matches} illeszkedik a szűrőkre ${total} készségből`,
+  graphControls: {
+    aria: 'Grafikon mérete',
+    less: 'Kevesebb',
+    more: 'Több csomópont',
+  },
+  results: {
+    aria: 'Szűrt készségek',
+    title: 'Találatok',
+    summary: (shown, total) => `${shown}/${total} listázva`,
+    completed: 'Kész',
+    ready: 'Készen',
+    blocked: 'Zárolt',
+  },
+  breadcrumbs: {
+    aria: 'Készség helye',
+  },
+  historyBack: 'Vissza',
   kidProfilesAria: 'Gyerekprofilok',
   defaultProfileName: 'Első gyerek',
   progressSummary: (completed, ready) => `${completed} kész · ${ready} készen áll`,
@@ -318,6 +385,14 @@ const hungarianUi: UiCopy = {
     tags: 'Címkék',
   },
   readyNode: 'Készen',
+  readiness: {
+    completedTitle: 'Kész ennél a gyereknél',
+    completedCopy: 'Ez a készség már késznek van jelölve az aktív profilban.',
+    readyTitle: 'Építhető',
+    readyCopy: 'Minden felsorolt előfeltétel kész, ezért ez a készség most gyakorolható.',
+    blockedTitle: (count) => `${count} előfeltétel még nyitva`,
+    blockedCopy: 'Kezdjétek a kapcsolt előfeltételekkel, mielőtt ezt késznek jelölitek.',
+  },
   practicePlan: {
     startFrom: (skills) => `Induljatok innen: ${skills}; ezekre az előzményekre épít ez a készség.`,
     rootPrompt: (prompt) => `${prompt}.`,

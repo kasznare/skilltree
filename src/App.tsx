@@ -19,6 +19,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import {
   Activity,
+  ArrowLeft,
   BadgeCheck,
   Brain,
   CheckCircle2,
@@ -196,11 +197,13 @@ function App() {
 function SkillTreeApp() {
   const [language, setLanguage] = useState<Language>(loadLanguage)
   const [selectedId, setSelectedId] = useState(defaultSkillId)
+  const [selectionTrail, setSelectionTrail] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [focusedDomain, setFocusedDomain] = useState<DomainFocus>('all')
   const [focusedStage, setFocusedStage] = useState<StageFocus>('infancy')
   const [viewMode, setViewMode] = useState<ViewMode>('path')
   const [viewportTier, setViewportTier] = useState<ViewportTier>(getViewportTier)
+  const [graphExpansion, setGraphExpansion] = useState(0)
   const [profiles, setProfiles] = useState<KidProfile[]>(loadProfiles)
   const [activeProfileId, setActiveProfileId] = useState(() => loadProfiles()[0]?.id ?? 'default-child')
   const [newProfileName, setNewProfileName] = useState('')
@@ -308,13 +311,15 @@ function SkillTreeApp() {
   const graphRoles = useMemo(() => buildGraphRoles(unlockMap, skills), [skills, unlockMap])
   const selectedPrerequisiteCompleteCount = selectedSkill.prerequisites.filter((id) => completedIds.has(id)).length
   const selectedComplete = completedIds.has(selectedSkill.id)
+  const selectedReady = selectedSkill.prerequisites.every((id) => completedIds.has(id))
+  const missingPrerequisites = selectedPrerequisites.filter((skill) => !completedIds.has(skill.id))
   const completedCount = completedIds.size
   const readyCount = skills.filter(
     (skill) => !completedIds.has(skill.id) && skill.prerequisites.every((id) => completedIds.has(id)),
   ).length
   const activeFocusCount =
     Number(Boolean(activeQuery)) + Number(focusedDomain !== 'all') + Number(focusedStage !== 'all')
-  const graphBudget = getGraphBudget(viewportTier, viewMode)
+  const graphBudget = getGraphBudget(viewportTier, viewMode, graphExpansion)
   const filteredSkills = useMemo(() => {
     if (activeFocusCount === 0) {
       return skills
@@ -400,6 +405,11 @@ function SkillTreeApp() {
     () => graphEdges.filter(({ from, to }) => renderedSkillIds.has(from.id) && renderedSkillIds.has(to.id)),
     [graphEdges, renderedSkillIds],
   )
+  const resultListLimit = getResultListLimit(viewportTier)
+  const resultListSkills = useMemo(
+    () => buildResultList(filteredSkills, selectedSkill, filteredSkillIds, resultListLimit),
+    [filteredSkillIds, filteredSkills, resultListLimit, selectedSkill],
+  )
   const cameraFitKey = [
     viewportTier,
     viewMode,
@@ -412,6 +422,7 @@ function SkillTreeApp() {
   const graphNodeSize = getGraphNodeSize(viewportTier)
   const useCompactNodes = viewportTier !== 'desktop' || viewMode === 'world' || renderedSkills.length > 90
   const showMiniMap = viewportTier === 'desktop' && renderedSkills.length <= 180
+  const canExpandGraph = activeFocusCount > 0 && renderedSkills.length < filteredSkills.length && graphExpansion < 3
 
   useEffect(() => {
     saveLanguage(language)
@@ -446,6 +457,10 @@ function SkillTreeApp() {
       setSelectedId(filteredSkills[0].id)
     }
   }, [activeFocusCount, filteredSkillIds, filteredSkills, selectedId])
+
+  useEffect(() => {
+    setGraphExpansion(0)
+  }, [activeQuery, focusedDomain, focusedStage, viewportTier, viewMode])
 
   useEffect(() => {
     let cancelled = false
@@ -627,6 +642,26 @@ function SkillTreeApp() {
     setFocusedDomain('all')
     setFocusedStage(activeProfile.ageBand)
     setViewMode('path')
+  }
+
+  function selectSkill(id: string) {
+    if (id === selectedId) {
+      return
+    }
+
+    setSelectionTrail((current) => [selectedId, ...current.filter((trailId) => trailId !== id)].slice(0, 24))
+    setSelectedId(id)
+  }
+
+  function goBackInTrail() {
+    const previous = selectionTrail[0]
+
+    if (!previous) {
+      return
+    }
+
+    setSelectionTrail((current) => current.slice(1))
+    setSelectedId(previous)
   }
 
   function chooseStage(stage: StageFocus) {
@@ -827,7 +862,57 @@ function SkillTreeApp() {
             })}
           </div>
 
-          <p className="result-count">{ui.resultCount(filteredSkills.length, renderedSkills.length, skills.length)}</p>
+          <div className="result-tools">
+            <p className="result-count">{ui.resultCount(filteredSkills.length, renderedSkills.length, skills.length)}</p>
+            <div className="graph-budget-controls" aria-label={ui.graphControls.aria}>
+              <button type="button" onClick={() => setGraphExpansion((level) => Math.max(0, level - 1))} disabled={graphExpansion === 0}>
+                {ui.graphControls.less}
+              </button>
+              <button
+                type="button"
+                onClick={() => setGraphExpansion((level) => Math.min(3, level + 1))}
+                disabled={!canExpandGraph}
+              >
+                {ui.graphControls.more}
+              </button>
+            </div>
+          </div>
+
+          <section className="results-strip" aria-label={ui.results.aria}>
+            <div className="results-strip__header">
+              <strong>{ui.results.title}</strong>
+              <span>{ui.results.summary(resultListSkills.length, filteredSkills.length)}</span>
+            </div>
+            <div className="results-list">
+              {resultListSkills.map((skill) => {
+                const domain = domainById.get(skill.domain) ?? domains[0]
+                const stage = stageLabelById.get(skill.stage) ?? stages[0]
+                const ready = skill.prerequisites.every((id) => completedIds.has(id))
+
+                return (
+                  <button
+                    className={[
+                      'result-card',
+                      skill.id === selectedSkill.id ? 'result-card--selected' : '',
+                      completedIds.has(skill.id) ? 'result-card--completed' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    key={skill.id}
+                    type="button"
+                    onClick={() => selectSkill(skill.id)}
+                    style={{ '--domain-color': domain.color } as CSSProperties}
+                  >
+                    <span>
+                      {stage.age} · {domain.shortLabel}
+                    </span>
+                    <strong>{skill.title}</strong>
+                    <em>{completedIds.has(skill.id) ? ui.results.completed : ready ? ui.results.ready : ui.results.blocked}</em>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
 
           <div className="profile-row" aria-label={ui.kidProfilesAria}>
             <div className="profile-summary">
@@ -907,7 +992,7 @@ function SkillTreeApp() {
               nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
-              onNodeClick={(_, node) => setSelectedId(node.id)}
+              onNodeClick={(_, node) => selectSkill(node.id)}
               minZoom={0.18}
               maxZoom={1.55}
               fitView
@@ -963,6 +1048,25 @@ function SkillTreeApp() {
               {selectedDomain.label}
             </div>
 
+            <nav className="breadcrumb-row" aria-label={ui.breadcrumbs.aria}>
+              <button type="button" onClick={() => chooseStage(selectedSkill.stage)}>
+                {stageLabelById.get(selectedSkill.stage)?.title}
+              </button>
+              <ChevronRight aria-hidden="true" size={14} />
+              <button type="button" onClick={() => chooseDomain(selectedSkill.domain)}>
+                {selectedDomain.shortLabel}
+              </button>
+              <ChevronRight aria-hidden="true" size={14} />
+              <span>{roleLabels[selectedRole]}</span>
+            </nav>
+
+            <div className="detail-actions">
+              <button type="button" onClick={goBackInTrail} disabled={selectionTrail.length === 0}>
+                <ArrowLeft aria-hidden="true" size={16} />
+                {ui.historyBack}
+              </button>
+            </div>
+
             <h2>{selectedSkill.title}</h2>
             <p className="detail-summary">{selectedSkill.summary}</p>
 
@@ -986,6 +1090,39 @@ function SkillTreeApp() {
               <CheckCircle2 aria-hidden="true" size={18} />
               {selectedComplete ? ui.completedFor(activeProfileName) : ui.completeFor(activeProfileName)}
             </button>
+
+            <div
+              className={[
+                'readiness-card',
+                selectedComplete ? 'readiness-card--complete' : selectedReady ? 'readiness-card--ready' : 'readiness-card--blocked',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <strong>
+                {selectedComplete
+                  ? ui.readiness.completedTitle
+                  : selectedReady
+                    ? ui.readiness.readyTitle
+                    : ui.readiness.blockedTitle(missingPrerequisites.length)}
+              </strong>
+              <p>
+                {selectedComplete
+                  ? ui.readiness.completedCopy
+                  : selectedReady
+                    ? ui.readiness.readyCopy
+                    : ui.readiness.blockedCopy}
+              </p>
+              {!selectedComplete && !selectedReady && (
+                <div className="readiness-links">
+                  {missingPrerequisites.slice(0, 3).map((skill) => (
+                    <button key={skill.id} type="button" onClick={() => selectSkill(skill.id)}>
+                      {skill.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <dl className="detail-meta">
               <div>
@@ -1058,14 +1195,14 @@ function SkillTreeApp() {
               icon={GitBranch}
               skills={selectedPrerequisites}
               emptyLabel={ui.detail.noLinkedSkills}
-              onSelect={setSelectedId}
+              onSelect={selectSkill}
             />
             <SkillLinks
               title={ui.detail.unlocksNext}
               icon={ChevronRight}
               skills={selectedUnlocks}
               emptyLabel={ui.detail.noLinkedSkills}
-              onSelect={setSelectedId}
+              onSelect={selectSkill}
             />
 
             <div className="tag-row" aria-label={ui.detail.tags}>
@@ -1369,16 +1506,16 @@ function getViewportTier(): ViewportTier {
   return 'desktop'
 }
 
-function getGraphBudget(viewportTier: ViewportTier, viewMode: ViewMode) {
+function getGraphBudget(viewportTier: ViewportTier, viewMode: ViewMode, expansionLevel: number) {
   if (viewportTier === 'mobile') {
-    return viewMode === 'node' ? 32 : 48
+    return (viewMode === 'node' ? 32 : 48) + expansionLevel * 18
   }
 
   if (viewportTier === 'tablet') {
-    return viewMode === 'node' ? 52 : 88
+    return (viewMode === 'node' ? 52 : 88) + expansionLevel * 32
   }
 
-  return viewMode === 'node' ? 90 : 156
+  return (viewMode === 'node' ? 90 : 156) + expansionLevel * 52
 }
 
 function getGraphNodeSize(viewportTier: ViewportTier) {
@@ -1391,6 +1528,33 @@ function getGraphNodeSize(viewportTier: ViewportTier) {
   }
 
   return { width: 218, height: 126 }
+}
+
+function getResultListLimit(viewportTier: ViewportTier) {
+  if (viewportTier === 'mobile') {
+    return 18
+  }
+
+  if (viewportTier === 'tablet') {
+    return 28
+  }
+
+  return 42
+}
+
+function buildResultList(
+  skills: SkillNode[],
+  selectedSkill: SkillNode,
+  filteredSkillIds: Set<string>,
+  limit: number,
+) {
+  const list = skills.slice(0, limit)
+
+  if (!filteredSkillIds.has(selectedSkill.id) || list.some((skill) => skill.id === selectedSkill.id)) {
+    return list
+  }
+
+  return [selectedSkill, ...list.slice(0, Math.max(0, limit - 1))]
 }
 
 function limitSkillsForViewport(
