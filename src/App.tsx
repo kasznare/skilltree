@@ -86,6 +86,21 @@ type SkillNodeData = {
   unlockCount: number
 }
 
+type AchievementStep = {
+  title: string
+  body: string
+  cue: string
+}
+
+type AchievementPlan = {
+  materials: string[]
+  observations: string[]
+  steps: AchievementStep[]
+  completionRule: string
+  easier: string
+  harder: string
+}
+
 const nodeTypes = {
   skill: SkillMapNode,
 }
@@ -724,10 +739,11 @@ function SkillTreeApp() {
   }
 
   const selectedRole = graphRoles.get(selectedSkill.id) ?? 'ordinary'
-  const selectedPracticePlan = buildPracticePlan(
+  const selectedAchievementPlan = buildAchievementPlan(
     selectedSkill,
     selectedGuide,
     selectedPrerequisites,
+    selectedUnlocks,
     stagePracticePrompts,
     ui,
   )
@@ -1183,11 +1199,43 @@ function SkillTreeApp() {
                 <ClipboardCheck aria-hidden="true" size={17} />
                 {ui.detail.waysToBuild}
               </h3>
-              <ol>
-                {selectedPracticePlan.map((step, index) => (
-                  <li key={`${selectedSkill.id}-practice-${index}`}>{step}</li>
+
+              <div className="achievement-brief">
+                <div>
+                  <dt>{ui.practicePlan.materialsLabel}</dt>
+                  <dd>{selectedAchievementPlan.materials.join(', ')}</dd>
+                </div>
+                <div>
+                  <dt>{ui.practicePlan.observeLabel}</dt>
+                  <dd>{selectedAchievementPlan.observations.join(', ')}</dd>
+                </div>
+              </div>
+
+              <ol className="achievement-steps">
+                {selectedAchievementPlan.steps.map((step, index) => (
+                  <li key={`${selectedSkill.id}-practice-${index}`}>
+                    <strong>{step.title}</strong>
+                    <p>{step.body}</p>
+                    <span>{step.cue}</span>
+                  </li>
                 ))}
               </ol>
+
+              <div className="completion-rule">
+                <strong>{ui.practicePlan.completeWhenLabel}</strong>
+                <p>{selectedAchievementPlan.completionRule}</p>
+              </div>
+
+              <div className="difficulty-ladder">
+                <div>
+                  <dt>{ui.practicePlan.easierLabel}</dt>
+                  <dd>{selectedAchievementPlan.easier}</dd>
+                </div>
+                <div>
+                  <dt>{ui.practicePlan.harderLabel}</dt>
+                  <dd>{selectedAchievementPlan.harder}</dd>
+                </div>
+              </div>
             </div>
 
             <SkillLinks
@@ -1796,29 +1844,62 @@ function buildGraphRoles(unlockMap: Map<string, SkillNode[]>, skills: SkillNode[
   return roleMap
 }
 
-function buildPracticePlan(
+function buildAchievementPlan(
   skill: SkillNode,
   guide: DomainGuide,
   prerequisites: SkillNode[],
+  unlocks: SkillNode[],
   stagePracticePrompts: Record<StageId, string[]>,
   ui: UiCopy,
-) {
+): AchievementPlan {
   const stagePrompts = stagePracticePrompts[skill.stage]
-  const materials = guide.materials.slice(0, 3).join(', ')
-  const observation = guide.observe.slice(0, 3).join(', ')
-  const firstOutcome = skill.outcomes[0]?.toLocaleLowerCase(ui.locale) ?? ui.detail.outcomes.toLocaleLowerCase(ui.locale)
+  const materials = guide.materials.slice(0, 4)
+  const observations = guide.observe.slice(0, 4)
+  const firstOutcome = skill.outcomes[0] ?? ui.detail.outcomes
+  const secondOutcome = skill.outcomes[1] ?? firstOutcome
+  const thirdOutcome = skill.outcomes[2] ?? secondOutcome
   const skillTitle = skill.title.toLocaleLowerCase(ui.locale)
+  const observation = observations.slice(0, 3).join(', ')
+  const nextSkill = unlocks[0]?.title.toLocaleLowerCase(ui.locale) ?? thirdOutcome.toLocaleLowerCase(ui.locale)
   const prerequisiteText =
     prerequisites.length > 0
       ? ui.practicePlan.startFrom(formatSkillList(prerequisites, ui))
       : ui.practicePlan.rootPrompt(stagePrompts[0])
 
-  return [
-    prerequisiteText,
-    ui.practicePlan.practiceAround(guide.practiceLoop[0], skillTitle, materials),
-    ui.practicePlan.repeatFor(guide.practiceLoop[1], firstOutcome),
-    ui.practicePlan.watchFor(observation),
-  ]
+  return {
+    materials,
+    observations,
+    steps: [
+      {
+        title: ui.practicePlan.stepTitles.ready,
+        body: prerequisiteText,
+        cue: prerequisites.length > 0 ? ui.practicePlan.prerequisiteCue : stagePrompts[0],
+      },
+      {
+        title: ui.practicePlan.stepTitles.setup,
+        body: ui.practicePlan.setup(stagePrompts[0], materials.slice(0, 3).join(', ')),
+        cue: guide.growthArc[skill.stage] ?? guide.subdomains.slice(0, 3).join(', '),
+      },
+      {
+        title: ui.practicePlan.stepTitles.show,
+        body: ui.practicePlan.show(guide.practiceLoop[0], skillTitle, firstOutcome.toLocaleLowerCase(ui.locale)),
+        cue: firstOutcome,
+      },
+      {
+        title: ui.practicePlan.stepTitles.repeat,
+        body: ui.practicePlan.repeatFor(guide.practiceLoop[1], secondOutcome.toLocaleLowerCase(ui.locale)),
+        cue: secondOutcome,
+      },
+      {
+        title: ui.practicePlan.stepTitles.stretch,
+        body: ui.practicePlan.stretch(guide.practiceLoop[2], nextSkill),
+        cue: thirdOutcome,
+      },
+    ],
+    completionRule: ui.practicePlan.completeRule(skill.outcomes.length, observation),
+    easier: ui.practicePlan.makeEasier(stagePrompts[1] ?? stagePrompts[0]),
+    harder: ui.practicePlan.makeHarder(nextSkill),
+  }
 }
 
 function formatSkillList(list: SkillNode[], ui: UiCopy) {

@@ -122,9 +122,26 @@ export type UiCopy = {
   practicePlan: {
     startFrom: (skills: string) => string
     rootPrompt: (prompt: string) => string
-    practiceAround: (loop: string, skillTitle: string, materials: string) => string
+    prerequisiteCue: string
+    stepTitles: {
+      ready: string
+      setup: string
+      show: string
+      repeat: string
+      stretch: string
+    }
+    materialsLabel: string
+    observeLabel: string
+    completeWhenLabel: string
+    easierLabel: string
+    harderLabel: string
+    setup: (prompt: string, materials: string) => string
+    show: (loop: string, skillTitle: string, outcome: string) => string
     repeatFor: (loop: string, outcome: string) => string
-    watchFor: (observation: string) => string
+    stretch: (loop: string, next: string) => string
+    completeRule: (outcomeCount: number, observation: string) => string
+    makeEasier: (prompt: string) => string
+    makeHarder: (next: string) => string
   }
   listAnd: string
 }
@@ -280,7 +297,7 @@ const englishUi: UiCopy = {
     root: 'Root',
     domainMap: 'Domain map',
     outcomes: 'Outcomes',
-    waysToBuild: 'Ways to build this',
+    waysToBuild: 'Achievement steps',
     beforeThis: 'Before this',
     unlocksNext: 'Unlocks next',
     noLinkedSkills: 'No linked skills yet.',
@@ -298,10 +315,27 @@ const englishUi: UiCopy = {
   practicePlan: {
     startFrom: (skills) => `Start from ${skills}; those are the roots this skill expects.`,
     rootPrompt: (prompt) => `${prompt}.`,
-    practiceAround: (loop, skillTitle, materials) => `${loop} around "${skillTitle}" using ${materials}.`,
-    repeatFor: (loop, outcome) => `${loop} so he can practice ${outcome}.`,
-    watchFor: (observation) =>
-      `Watch for ${observation}; mark complete when the outcomes are showing up in ordinary life.`,
+    prerequisiteCue: 'Do not skip this: blocked prerequisites explain why the node is not ready yet.',
+    stepTitles: {
+      ready: 'Confirm readiness',
+      setup: 'Set up the rep',
+      show: 'Model the skill',
+      repeat: 'Run short reps',
+      stretch: 'Raise the challenge',
+    },
+    materialsLabel: 'Use',
+    observeLabel: 'Watch',
+    completeWhenLabel: 'Mark complete when',
+    easierLabel: 'Make easier',
+    harderLabel: 'Make harder',
+    setup: (prompt, materials) => `${prompt}. Put ${materials} within reach and choose one ordinary moment to practice.`,
+    show: (loop, skillTitle, outcome) => `${loop} for "${skillTitle}", then name the target: ${outcome}.`,
+    repeatFor: (loop, outcome) => `${loop}. Keep each attempt short enough that he can practice ${outcome} without turning it into a battle.`,
+    stretch: (loop, next) => `${loop}. When this feels easy, connect it to ${next}.`,
+    completeRule: (outcomeCount, observation) =>
+      `All ${outcomeCount} outcomes show up on three ordinary occasions, with only age-appropriate reminders. Watch especially for ${observation}.`,
+    makeEasier: (prompt) => `${prompt}; reduce the task to one cue, one material, or one attempt.`,
+    makeHarder: (next) => `Ask him to use the skill in a slightly noisier, longer, or more independent situation, then preview ${next}.`,
   },
   listAnd: 'and',
 }
@@ -378,7 +412,7 @@ const hungarianUi: UiCopy = {
     root: 'Gyökér',
     domainMap: 'Területtérkép',
     outcomes: 'Eredmények',
-    waysToBuild: 'Hogyan építsd',
+    waysToBuild: 'Elérési lépések',
     beforeThis: 'Előtte',
     unlocksNext: 'Ez nyílik utána',
     noLinkedSkills: 'Még nincs kapcsolódó készség.',
@@ -396,10 +430,27 @@ const hungarianUi: UiCopy = {
   practicePlan: {
     startFrom: (skills) => `Induljatok innen: ${skills}; ezekre az előzményekre épít ez a készség.`,
     rootPrompt: (prompt) => `${prompt}.`,
-    practiceAround: (loop, skillTitle, materials) => `${loop} a(z) "${skillTitle}" készség körül, ezekkel: ${materials}.`,
-    repeatFor: (loop, outcome) => `${loop}, hogy gyakorolja ezt: ${outcome}.`,
-    watchFor: (observation) =>
-      `Figyeld ezeket: ${observation}; akkor jelöld késznek, ha az eredmények már a hétköznapokban is megjelennek.`,
+    prerequisiteCue: 'Ezt ne ugorjátok át: a zárolt előfeltételek mutatják, miért nem kész még a csomópont.',
+    stepTitles: {
+      ready: 'Készenlét ellenőrzése',
+      setup: 'Gyakorlás előkészítése',
+      show: 'Mutasd meg a készséget',
+      repeat: 'Rövid ismétlések',
+      stretch: 'Nehezítés',
+    },
+    materialsLabel: 'Eszközök',
+    observeLabel: 'Figyeld',
+    completeWhenLabel: 'Akkor jelöld késznek',
+    easierLabel: 'Könnyítés',
+    harderLabel: 'Nehezítés',
+    setup: (prompt, materials) => `${prompt}. Legyen kéznél: ${materials}, és válasszatok egy hétköznapi pillanatot a gyakorlásra.`,
+    show: (loop, skillTitle, outcome) => `${loop} a(z) "${skillTitle}" készségnél, majd nevezd meg a célt: ${outcome}.`,
+    repeatFor: (loop, outcome) => `${loop}. Legyen minden próbálkozás elég rövid ahhoz, hogy ezt gyakorolja: ${outcome}, vita nélkül.`,
+    stretch: (loop, next) => `${loop}. Amikor ez könnyűnek érződik, kapcsold ehhez: ${next}.`,
+    completeRule: (outcomeCount, observation) =>
+      `Mind a ${outcomeCount} eredmény megjelenik három hétköznapi alkalommal, csak életkornak megfelelő emlékeztetéssel. Különösen ezt figyeld: ${observation}.`,
+    makeEasier: (prompt) => `${prompt}; szűkítsd le a feladatot egy jelre, egy eszközre vagy egy próbálkozásra.`,
+    makeHarder: (next) => `Használja a készséget kicsit zajosabb, hosszabb vagy önállóbb helyzetben, majd készítsd elő ezt: ${next}.`,
   },
   listAnd: 'és',
 }

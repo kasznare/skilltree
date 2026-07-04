@@ -1237,6 +1237,43 @@
   list-style: none;
 }
 
+.achievement-brief,
+.difficulty-ladder {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.achievement-brief div,
+.difficulty-ladder div,
+.completion-rule {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--domain-color, var(--accent)), transparent 76%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--domain-color, var(--accent)), white 94%);
+}
+
+.achievement-brief dt,
+.difficulty-ladder dt {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.achievement-brief dd,
+.difficulty-ladder dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 740;
+}
+
+.achievement-steps {
+  margin-top: 2px;
+}
+
 .practice-plan li {
   position: relative;
   min-height: 46px;
@@ -1246,6 +1283,28 @@
   background: #fffefa;
   color: var(--ink);
   font-size: 0.9rem;
+}
+
+.practice-plan li strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.practice-plan li p {
+  margin: 4px 0 0;
+  color: var(--ink);
+}
+
+.practice-plan li span {
+  display: inline-flex;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.74rem;
+  font-weight: 820;
 }
 
 .practice-plan li::before {
@@ -1263,6 +1322,22 @@
   color: var(--accent-strong);
   font-size: 0.75rem;
   font-weight: 900;
+}
+
+.completion-rule {
+  display: grid;
+  gap: 4px;
+}
+
+.completion-rule strong {
+  color: var(--accent-strong);
+  font-size: 0.86rem;
+}
+
+.completion-rule p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.9rem;
 }
 
 .link-stack {
@@ -1493,6 +1568,11 @@ select:focus-visible {
 
   .detail-panel {
     padding: 22px 16px 28px;
+  }
+
+  .achievement-brief,
+  .difficulty-ladder {
+    grid-template-columns: 1fr;
   }
 
   .breadcrumb-row {
